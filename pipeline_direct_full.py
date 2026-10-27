@@ -108,7 +108,8 @@ def run_direct_full_pipeline(
         gemini_data = analyze_and_script(
             question=question,
             hexagram_data=hexagram_text,
-            api_key=key
+            api_key=key,
+            num_cards=num_cards
         )
         hexagram_title = gemini_data.get("hexagram_title", "QUẺ KINH DỊCH")
         full_interpretation = gemini_data.get("full_interpretation", "").strip()

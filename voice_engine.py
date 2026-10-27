@@ -123,7 +123,9 @@ def condense_analysis_to_concise_script(raw_text: str, question: str = "", num_c
     max_words_allowed = 85 + max(1, num_cards) * 32
 
     if not has_section_headers and len(words) <= max_words_allowed:
-        return sanitize_script_for_tts(txt)
+        cleaned_direct = sanitize_script_for_tts(txt)
+        if num_cards <= 1 or split_analysis_into_card_sections(cleaned_direct, num_cards).get("matched"):
+            return cleaned_direct
 
     # Extract concise intro from PHẦN 1 or beginning
     parsed = split_analysis_into_card_sections(txt, max(1, num_cards))
@@ -221,6 +223,44 @@ def split_analysis_into_card_sections(raw_text: str, num_cards: int) -> dict:
             break
         card_starts.append(found_idx)
         cur_pos = found_idx + 12
+
+    # Fallback matcher specifically for Tháp La Kinh Dịch if written as [Bản Quái / Quẻ Chủ] -> [Hào 1..K] -> [Biến Quái / Quẻ Biến]
+    if len(card_starts) != num_cards and num_cards >= 2:
+        tl_starts = []
+        tl_cur = search_start
+        for k in range(1, num_cards + 1):
+            ord_pat = ORDINAL_WORDS.get(k, str(k))
+            if k == 1:
+                tl_pats = [
+                    rf"(?:^|\n)\s*[+\-*•✦#\d\.]*\s*(?:【?\s*(?:1\.\s*)?(?:BẢN\s*QUÁI|QUẺ\s*CHỦ)|Lá\s*(?:bài\s*)?(?:thứ\s*{ord_pat}|1)\b)",
+                    r"\b(?:Bản\s*quái|Quẻ\s*chủ)\b",
+                ]
+            elif k == num_cards:
+                tl_pats = [
+                    rf"(?:^|\n)\s*[+\-*•✦#\d\.]*\s*(?:【?\s*(?:[23]\.\s*)?(?:BIẾN\s*QUÁI|QUẺ\s*BIẾN)|Lá\s*(?:bài\s*)?(?:thứ\s*{ord_pat}|{k})\b)",
+                    r"\b(?:Biến\s*quái|Quẻ\s*biến)\b",
+                ]
+            else:
+                yao_ord = k - 1
+                yao_ord_pat = ORDINAL_WORDS.get(yao_ord, str(yao_ord))
+                tl_pats = [
+                    rf"(?:^|\n)\s*[+\-*•✦#▶]*\s*(?:Hào\s*Động\s*(?:thứ\s*{yao_ord_pat}|số\s*{yao_ord}|{yao_ord})|Lá\s*(?:bài\s*)?(?:thứ\s*{ord_pat}|{k})|Hào\s*(?:số\s*)?[1-6]|(?:Hào\s*)?(?:Sơ|Nhị|Tam|Tứ|Ngũ|Thượng)\s*(?:Cửu|Lục)|(?:Hào\s*)?(?:Cửu|Lục)\s*(?:Sơ|Nhị|Tam|Tứ|Ngũ|Thượng))\b",
+                    rf"\b(?:Hào\s*động\s*thứ\s*{yao_ord_pat}|Hào\s*(?:thứ\s*)?(?:nhất|một|hai|nhì|ba|tư|bốn|năm|sáu|[1-6])|(?:Sơ|Nhị|Tam|Tứ|Ngũ|Thượng)\s*(?:Cửu|Lục)|(?:Cửu|Lục)\s*(?:Sơ|Nhị|Tam|Tứ|Ngũ|Thượng))\b",
+                ]
+            f_idx = None
+            for pat in tl_pats:
+                m = re.search(pat, body_for_cards[tl_cur:], flags=re.IGNORECASE)
+                if m:
+                    f_idx = tl_cur + m.start()
+                    while f_idx < outro_start and body_for_cards[f_idx] in "\r\n":
+                        f_idx += 1
+                    break
+            if f_idx is None:
+                break
+            tl_starts.append(f_idx)
+            tl_cur = f_idx + 12
+        if len(tl_starts) == num_cards:
+            card_starts = tl_starts
 
     if len(card_starts) == num_cards:
         # In concise scripts without PHẦN 3, detect the concluding sentence marker after the last card

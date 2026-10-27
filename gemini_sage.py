@@ -78,7 +78,7 @@ CANDIDATE_MODELS = [
     "gemini-3.8-flash"
 ]
 
-def analyze_and_script(question: str, hexagram_data: str, api_key: str = None) -> dict:
+def analyze_and_script(question: str, hexagram_data: str, api_key: str = None, num_cards: int = 0) -> dict:
     """Call Gemini with multi-model fallback to interpret I Ching and generate video script."""
     key = api_key or GEMINI_API_KEY
     if not key:
@@ -86,13 +86,23 @@ def analyze_and_script(question: str, hexagram_data: str, api_key: str = None) -
 
     client = genai.Client(api_key=key)
 
+    card_count_instruction = ""
+    if num_cards > 0:
+        card_count_instruction = (
+            f"\n- Trải bài này có CHÍNH XÁC {num_cards} LÁ BÀI trên bàn trải bài.\n"
+            f"- Nếu là TRẬN THÁP LA KINH DỊCH ({num_cards} lá): Lá thứ nhất là Bản Quái (Quẻ Chủ); "
+            f"{f'từ Lá thứ hai đến Lá thứ {num_cards - 1} là lần lượt từng lá Hào Động riêng biệt (mỗi lá Hào Động 1 câu riêng mở đầu bằng Lá thứ hai..., Lá thứ ba..., tuyệt đối KHÔNG gộp chung các hào động!); ' if num_cards > 2 else ''}"
+            f"Lá thứ {num_cards} (lá cuối cùng) là Biến Quái (Quẻ Biến).\n"
+            f"- Trong `video_script`, BẮT BUỘC phải có đúng {num_cards} câu điểm huyệt tuần tự cho từng lá (mở đầu bằng 'Lá thứ nhất...', 'Lá thứ hai...', cho tới đủ {num_cards} lá bài) để máy quay chuyển cảnh khớp 100% từng lá bài!"
+        )
+
     user_content = f"""CÂU HỎI CỦA NGƯỜI CHIÊM BỐC:
 "{question}"
 
 DỮ LIỆU CÁC LÁ BÀI & TRẬN PHÁP THU THẬP TỪ ICHINGTAROT.COM:
 {hexagram_data}
 
-YÊU CẦU ĐẶC BIỆT:
+YÊU CẦU ĐẶC BIỆT:{card_count_instruction}
 - Hãy kiểm tra tổng số lượng lá bài trong dữ liệu trên.
 - BẮT BUỘC: Luận giải 100% đầy đủ từng lá bài từ Lá 1 đến lá cuối cùng trong cả full_interpretation (bài luận toàn văn) và video_script (kịch bản thuyết minh).
 - RIÊNG VỚI video_script (KỊCH BẢN THUYẾT MINH): Phải CÀNG NGẮN GỌN CÀNG TỐT nhưng vẫn mang ĐẦY ĐỦ THÔNG ĐIỆP (Mở màn đúng 1 câu ngắn; mỗi lá bài từ Lá thứ nhất đến Lá cuối cùng đúng 1 câu súc tích đi thẳng vào thông điệp; kết bài đúng 1 câu bắt đầu bằng "Tóm lại,"). Tuyệt đối không đọc tiêu đề Phần 1/2/3/4, không dài dòng!

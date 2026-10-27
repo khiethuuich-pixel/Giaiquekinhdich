@@ -215,6 +215,7 @@ class DirectHomeRequest(BaseModel):
     card_images_base64: list[str] = []
     hexagram_text: str = ""
     custom_analysis_text: str = ""
+    cards_order_version: int = 1
 
 class CrawlOnlyRequest(BaseModel):
     question: str = ""
@@ -669,6 +670,15 @@ async def api_direct_home_run(req: DirectHomeRequest, background_tasks: Backgrou
                 saved_card_paths.append(str(c_out))
             except Exception as e:
                 print(f"[DirectHome] Lỗi giải mã lá bài {idx+1}: {e}")
+
+    # Nếu tab trình duyệt cũ gửi mảng Tháp La theo thứ tự [Quẻ Chủ, Quẻ Biến, Hào 1..K] (version < 2),
+    # tự động chuẩn hóa về thứ tự đọc [Quẻ Chủ, Hào 1..K, Quẻ Biến] để khớp 100% với giọng đọc!
+    if (
+        len(saved_card_paths) > 2
+        and getattr(req, "cards_order_version", 1) < 2
+        and "THÁP LA" in (req.hexagram_text or "").upper()
+    ):
+        saved_card_paths = [saved_card_paths[0]] + saved_card_paths[2:] + [saved_card_paths[1]]
 
     question_text = (req.question or "").strip() or "Xin quẻ Kinh Dịch chỉ dẫn thời vận và định hướng hành động tối ưu"
     n_cards_hint = len(saved_card_paths) if saved_card_paths else 3

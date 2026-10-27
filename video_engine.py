@@ -49,15 +49,25 @@ def _order_grid_cards_by_spread_geometry(detected: list[tuple[int, int, int, int
       idx 5..7 (Col 4, sorted by Y) = Lá 4, Lá 1, Lá 3
       idx 8..9 (Col 5, sorted by Y) = Lá 5, Lá 6
       -> Returns [Lá 1 .. Lá 10]
-    - Tháp La (4..8 cards in 2 rows where leftmost column has Quẻ Chủ top & Quẻ Biến bottom):
-      -> Returns [Quẻ Chủ, Quẻ Biến, Hào 1, Hào 2, ...]
+    - Tháp La (3..8 cards in 2 rows where leftmost column has Quẻ Chủ top & Quẻ Biến bottom):
+      -> Returns [Quẻ Chủ, Hào 1, Hào 2, ..., Quẻ Biến]
     """
     n = len(detected)
     cx = lambda b: (b[0] + b[2]) / 2.0
     cy = lambda b: (b[1] + b[3]) / 2.0
 
     if n == 7:
-        # Sort by Y center first: 1 top card, 3 middle cards, 3 bottom cards
+        # Check if this 7-card spread is Tháp La (leftmost column has 2 cards vertically aligned: Quẻ Chủ top, Quẻ Biến bottom)
+        by_x_7 = sorted(detected, key=cx)
+        min_cx_7 = cx(by_x_7[0])
+        col0_7 = [b for b in detected if abs(cx(b) - min_cx_7) < w * 0.12]
+        if len(col0_7) == 2:
+            col0_sorted = sorted(col0_7, key=cy)  # [Quẻ Chủ (top), Quẻ Biến (bottom)]
+            rest_7 = [b for b in detected if b not in col0_7]
+            rest_sorted = sorted(rest_7, key=lambda b: (int(cy(b) > h * 0.5), cx(b)))
+            return [col0_sorted[0]] + rest_sorted + [col0_sorted[1]]
+
+        # Otherwise 7 cards = Trận Pháp Thất Tinh Bắc Đẩu (1 top card, 3 middle cards, 3 bottom cards)
         by_y = sorted(detected, key=cy)
         c4 = by_y[0]
         mid_3 = sorted(by_y[1:4], key=cx)  # [Lá 2, Lá 3, Lá 5]
@@ -87,7 +97,7 @@ def _order_grid_cards_by_spread_geometry(detected: list[tuple[int, int, int, int
         if len(col0) == 2:
             col0_sorted = sorted(col0, key=cy)  # [Quẻ Chủ (top), Quẻ Biến (bottom)]
             rest_sorted = sorted(rest, key=lambda b: (int(cy(b) > h * 0.5), cx(b)))
-            return col0_sorted + rest_sorted
+            return [col0_sorted[0]] + rest_sorted + [col0_sorted[1]]
 
     # Default: top-to-bottom bands, then left-to-right
     return sorted(detected, key=lambda b: (int(cy(b) // (h / 3.2)), cx(b)))
@@ -198,11 +208,11 @@ def extract_cards_from_spread(spread_img_path: Path, output_dir: Path) -> list[P
             ch_tl = int(h * 0.40)
             tl_positions = [
                 (int(0.21 * w), int(0.28 * h)),
-                (int(0.21 * w), int(0.72 * h)),
                 (int(0.50 * w), int(0.28 * h)),
                 (int(0.79 * w), int(0.28 * h)),
                 (int(0.50 * w), int(0.72 * h)),
                 (int(0.79 * w), int(0.72 * h)),
+                (int(0.21 * w), int(0.72 * h)),
             ]
             card_boxes = [(cx - cw_tl//2, cy - ch_tl//2, cx + cw_tl//2, cy + ch_tl//2) for cx, cy in tl_positions]
     else:
