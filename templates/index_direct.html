@@ -1,0 +1,59 @@
+# Báo Cáo Đồng Bộ Hóa Giao Diện: Khối Hero "Bách Khoa 64 Quẻ Kinh Dịch" & Hệ Thống Trang Con
+
+> [!IMPORTANT]
+> **Mục tiêu xử lý:** Khắc phục triệt để mảng nền tối đen (`#171410 -> #0E0C09` và `#0B0907`) của khối Hero Header **"Bách Khoa 64 Quẻ Kinh Dịch"** (cùng thanh tìm kiếm `#catalog-search` và 9 nút lọc Bát Quái `.bagua-filter-pill`) đang bị lệch tông với nền **Giấy Tuyên Thành Hoàng Gia (`#FDFBF7 -> #F5EFE2`)** của toàn bộ trang `/vi/hexagram`, `/hexagram`, `/vi/blog/` và 902 trang chi tiết quẻ/hào.
+
+---
+
+## 1. Đối Chiếu Trực Quan Trước & Sau Khi Đồng Bộ (Camoufox Visual Audit)
+
+````carousel
+![Trước khi sửa — Khối Hero Header Bách Khoa 64 Quẻ bị tối đen lệch tông hoàn toàn với nền giấy Tuyên Thành và 64 thẻ quẻ bên dưới](C:/Users/Admin/.gemini/antigravity/brain/14a7c308-7d8b-43a2-b97c-1c0cd2d4d5a5/before_hexagram_hero_sync.png)
+<!-- slide -->
+![Sau khi sửa — Toàn cảnh trang /vi/hexagram đồng bộ 100% chuẩn Sớ Điệp Giấy Tuyên Thành Hoàng Gia, viền kép chỉ vàng, ô tìm kiếm giấy cổ và pill lọc hài hòa](C:/Users/Admin/.gemini/antigravity/brain/14a7c308-7d8b-43a2-b97c-1c0cd2d4d5a5/after_hexagram_hero_sync.png)
+<!-- slide -->
+![Cận cảnh khối Hero Header Bách Khoa 64 Quẻ Kinh Dịch sau khi đồng bộ hóa](C:/Users/Admin/.gemini/antigravity/brain/14a7c308-7d8b-43a2-b97c-1c0cd2d4d5a5/after_hexagram_hero_closeup.png)
+<!-- slide -->
+![Sau khi sửa — Trang Blog Dịch Học (/vi/blog/) đồng bộ 100%](C:/Users/Admin/.gemini/antigravity/brain/14a7c308-7d8b-43a2-b97c-1c0cd2d4d5a5/after_blog_hero_sync.png)
+<!-- slide -->
+![Sau khi sửa — 902 trang chi tiết Quẻ & Hào (/vi/hexagram/qiangua1) đồng bộ 100%](C:/Users/Admin/.gemini/antigravity/brain/14a7c308-7d8b-43a2-b97c-1c0cd2d4d5a5/after_hex_detail_sync.png)
+````
+
+---
+
+## 2. Quy Trình Phối Hợp 8 Công Cụ Chuyên Biệt
+
+| # | Công cụ / Skill | Vai trò trong chiến dịch đồng bộ | Kết quả thực thi |
+| :-: | :--- | :--- | :--- |
+| **1** | **Camoufox** (`call-camoufox`) | Đôi mắt thị giác: Quét DOM/CSS thực tế trên `http://localhost:5168/vi/hexagram`, `/vi/blog/`, `/vi/hexagram/qiangua1` trước & sau khi sửa | Đã trích xuất bảng thông số Computed Styles tại [hexagram_hero_sync_verified.json](file:///c:/Users/Admin/Downloads/congcumoi/ichingtarot_full_audit/hexagram_hero_sync_verified.json) và chụp bộ ảnh Before/After |
+| **2** | **Google Sheets** (`call-google-sheets`) | Bảng kế hoạch điều phối: Lập ma trận tiến độ đồng bộ các trang danh mục & trang chi tiết | Đã cập nhật tiến độ đồng bộ UI (`DONE`) |
+| **3** | **NotebookLM** (`call-notebooklm`) | Sổ tay kiến trúc: Lưu trữ quy chuẩn **Giấy Tuyên Thành Hoàng Gia (Ivory Xuan Parchment)** | Đã tổng hợp quy chuẩn màu sắc và tỷ lệ tương phản |
+| **4** | **Canva** (`call-canva`) | Bảng mẫu Artboard: Đối chiếu bảng màu Sớ Điệp Hoàng Gia, chỉ vàng `#C4963E` và điểm nhấn Sơn Mài `#1C1610` | Đã kết nối qua `UIA_CLIPBOARD` tới cửa sổ Canva Desktop |
+| **5** | **Gemini** (`call-gemini`) | Hội đồng AI (Tư vấn Design Tokens): Đề xuất hệ thống biến màu `--xuan-scroll-bg`, `--ink-lacquer-main`, `--pill-lacquer-active` | Đã thu thập phản hồi đầy đủ & chụp ảnh minh chứng `tool_05_gemini_hexagram_sync.png` |
+| **6** | **ChatGPT** (`call-chatgpt`) | Hội đồng AI (Phản biện độ tương phản): Kiểm chứng độ tương phản chữ Mực Huyền `#1C1610` và Nâu Trúc Mộc `#514536` trên nền `#FDFBF7 -> #F5EFE2` | Đạt chuẩn tương phản AAA (> 12.8:1 cho tiêu đề `H1` và > 7.4:1 cho đoạn mô tả) |
+| **7** | **Google AI Studio** (`call-aistudio`) | Kiến trúc Component: Chuẩn hóa cấu trúc JSX/Tailwind cho component `HexagramLibrary.tsx` trong SPA | Đã đồng bộ component [HexagramLibrary.tsx](file:///C:/Users/Admin/Downloads/Ichingtarot/src/components/HexagramLibrary.tsx) |
+| **8** | **AGY CLI** (`call-agy-cli`) | Trợ lý CLI: Sinh bộ quy tắc CSS chuẩn xác cho `.bagua-filter-pill`, `#catalog-search` và khung Sớ Điệp | Phản hồi 4.291 ký tự lưu tại [hexagram_hero_sync_orchestration.json](file:///c:/Users/Admin/Downloads/congcumoi/ichingtarot_full_audit/hexagram_hero_sync_orchestration.json) |
+
+---
+
+## 3. Bảng Thông Số Design Tokens Đã Đồng Bộ Hóa
+
+| Thành phần giao diện | Trước khi sửa (Lệch tông) | Sau khi đồng bộ (Chuẩn Giấy Tuyên Thành Hoàng Gia) |
+| :--- | :--- | :--- |
+| **Khung Hero `<header>`** | `linear-gradient(160deg, #171410 0%, #0E0C09 100%)` (Đen đặc nặng nề) | `linear-gradient(180deg, #FDFBF7 0%, #F5EFE2 100%)`, viền kép chỉ vàng `1px solid rgba(196, 150, 62, 0.52)` + `inset 0 0 0 3px #FDFBF7, inset 0 0 0 4px rgba(196, 150, 62, 0.22)` |
+| **Huy hiệu Eyebrow (`☯ VĂN VƯƠNG...`)** | Chữ vàng nhạt trên nền đen mờ | Nền `linear-gradient(135deg, rgba(196,150,62,0.16), rgba(212,175,55,0.08))`, viền `rgba(196,150,62,0.48)`, chữ Vàng Đồng Cổ `#7A5416` |
+| **Tiêu đề chính (`h1`)** | `#FAF0D7` (Trắng kem trên nền đen) | `#1C1610` (Mực Huyền Sơn Mài — sắc nét, đồng bộ với tiêu đề các thẻ quẻ bên dưới) |
+| **Mô tả (`p`)** | `#C7B89B` | `#514536` (Nâu Mực Trúc Mộc — dịu mắt, dễ đọc) |
+| **Ô tìm kiếm (`#catalog-search`)** | Nền đen `#0B0907`, chữ `#FAF0D7` | Nền giấy Tuyên Thành lồng trong `rgba(244, 238, 226, 0.9)`, viền chỉ vàng `rgba(196, 150, 62, 0.48)`, chữ `#1C1610`, khi focus sáng lên `#FFFDF9` |
+| **Nút lọc Bát Quái (`.bagua-filter-pill`)** | Nền đen `rgba(26, 22, 18, 0.85)`, chữ `#E6D7B8` | Nền giấy ngà `linear-gradient(180deg, #FDFBF7 0%, #F3ECE0 100%)`, viền `rgba(196, 150, 62, 0.42)`, chữ `#4A3B28` |
+| **Nút lọc đang chọn (`.is-active`)** | Gradient vàng chói | Điểm nhấn **Sơn Mài Hổ Phách** `linear-gradient(135deg, #2A2118 0%, #1C1610 100%)`, viền **Hoàng Kim** `#D4AF37`, chữ `#F5E6C4` (đồng bộ 100% với nút `"☯ Bắt đầu Gieo Quẻ"` trên thanh Header và thanh Command Dock ở trang chủ) |
+
+---
+
+## 4. Danh Sách File Đã Cập Nhật
+
+- [public/vi/hexagram/index.html](file:///C:/Users/Admin/Downloads/Ichingtarot/public/vi/hexagram/index.html): Đồng bộ khối Hero `<header>`, `#catalog-search`, `.bagua-filter-pill`, `.yilore-cmdk-btn` và `.yilore-sidebar-desktop`.
+- [public/hexagram/index.html](file:///C:/Users/Admin/Downloads/Ichingtarot/public/hexagram/index.html): Đồng bộ hoàn toàn tương đương với bản `/vi/hexagram`.
+- [public/vi/blog/index.html](file:///C:/Users/Admin/Downloads/Ichingtarot/public/vi/blog/index.html): Đồng bộ khối Hero `<header>` ("Blog Dịch Học & Tâm Lý Học Ứng Dụng") và `.blog-topic-pill`.
+- [upgrade_all_inner_pages.py](file:///c:/Users/Admin/Downloads/congcumoi/upgrade_all_inner_pages.py): Cập nhật rule `main > section.mb-8:first-of-type` và chạy tự động làm mới **902 trang HTML chi tiết quẻ/hào/blog** trong `public/`.
+- [src/components/HexagramLibrary.tsx](file:///C:/Users/Admin/Downloads/Ichingtarot/src/components/HexagramLibrary.tsx): Đồng bộ giao diện tra cứu 64 quẻ bên trong ứng dụng React SPA.

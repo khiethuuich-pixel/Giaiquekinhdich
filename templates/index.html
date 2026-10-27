@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cửu Nhị · Studio Video MP4 & Podcast Kinh Dịch Chuyên Sâu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Cinzel:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0B0A08;
+      --bg-card: #14120F;
+      --bg-input: #1C1914;
+      --border-gold: #C4963E;
+      --border-subtle: #2D251A;
+      --gold-primary: #D4AF37;
+      --gold-light: #F3E5AB;
+      --gold-glow: rgba(212, 175, 55, 0.25);
+      --text-main: #F3EFE6;
+      --text-muted: #9E9484;
+      --accent-cinnabar: #9A1F1A;
+      --accent-cyan: #38BDF8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Be Vietnam Pro', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(196, 150, 62, 0.14) 0%, transparent 60%),
+        radial-gradient(circle at 85% 90%, rgba(154, 31, 26, 0.10) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(11, 10, 8, 0.90);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 16px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+
+    .board-switcher {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(22, 19, 15, 0.95);
+      padding: 4px;
+      border-radius: 24px;
+      border: 1px solid var(--border-gold);
+      box-shadow: 0 0 14px var(--gold-glow);
+    }
+
+    .switcher-pill {
+      padding: 6px 14px;
+      border-radius: 18px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .switcher-pill:hover {
+      color: var(--gold-light);
+    }
+
+    .switcher-pill.active {
+      background: linear-gradient(135deg, #C4963E, #D4AF37);
+      color: #0B0A08;
+      box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: var(--gold-primary);
+      background: rgba(196, 150, 62, 0.12);
+      box-shadow: 0 0 16px var(--gold-glow);
+    }
+
+    .brand h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 21px;
+      letter-spacing: 1.2px;
+      color: var(--gold-light);
+    }
+
+    .brand p {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+    }
+
+    .status-badge.ready {
+      color: #68D391;
+      border-color: rgba(104, 211, 145, 0.35);
+    }
+
+    .status-badge.missing {
+      color: #FC8181;
+      border-color: rgba(252, 129, 129, 0.35);
+    }
+
+    .btn-key-modal {
+      background: transparent;
+      border: 1px solid var(--border-gold);
+      color: var(--gold-light);
+      padding: 7px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-key-modal:hover {
+      background: rgba(196, 150, 62, 0.15);
+      box-shadow: 0 0 12px var(--gold-glow);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* HERO BANNER */
+    .hero-banner {
+      text-align: center;
+      margin-bottom: 32px;
+      padding: 24px 20px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(20, 18, 14, 0.8) 0%, rgba(11, 10, 8, 0.4) 100%);
+      border: 1px solid var(--border-subtle);
+      position: relative;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--gold-primary);
+      margin-bottom: 8px;
+    }
+
+    .hero-title {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      color: var(--gold-light);
+      margin-bottom: 10px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .hero-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 820px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* INPUT STUDIO CARD */
+    .studio-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+      margin-bottom: 32px;
+      position: relative;
+    }
+
+    .studio-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-gold), transparent);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gold-light);
+      margin-bottom: 0;
+      letter-spacing: 0.5px;
+    }
+
+    .voice-input-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-voice-mic {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(196, 150, 62, 0.12);
+      border: 1.5px solid var(--border-gold);
+      color: var(--gold-light);
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      user-select: none;
+    }
+
+    .btn-voice-mic:hover {
+      background: rgba(196, 150, 62, 0.25);
+      box-shadow: 0 0 14px var(--gold-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-voice-mic.recording {
+      background: rgba(220, 38, 38, 0.25);
+      border-color: #EF4444;
+      color: #FCA5A5;
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.6);
+      animation: pulse-mic 1.4s infinite;
+    }
+
+    @keyframes pulse-mic {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .btn-clear-question {
+      background: rgba(45, 37, 26, 0.6);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-clear-question:hover {
+      border-color: var(--border-gold);
+      color: var(--gold-light);
+      background: rgba(196, 150, 62, 0.2);
+    }
+
+    .voice-status-notice {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      right: 12px;
+      background: rgba(24, 18, 14, 0.96);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: #FCA5A5;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(8px);
+      z-index: 10;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .voice-status-notice.active {
+      display: flex;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: #EF4444;
+      border-radius: 50%;
+      animation: blink-dot 0.9s infinite alternate;
+      flex-shrink: 0;
+    }
+
+    @keyframes blink-dot {
+      from { opacity: 0.25; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1.15); }
+    }
+
+    textarea.input-question {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: 'Be Vietnam Pro', sans-serif;
+      font-size: 15px;
+      padding: 14px 16px;
+      min-height: 95px;
+      resize: vertical;
+      transition: all 0.25s ease;
+      line-height: 1.5;
+    }
+
+    textarea.input-question:focus {
+      outline: none;
+      border-color: var(--border-gold);
+      box-shadow: 0 0 14px var(--gold-glow);
+    }
+
+    .quick-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .pill-btn {
+      background: rgba(45, 37, 26, 0.6);
+      border: 1px solid rgba(196, 150, 62, 0.3);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pill-btn:hover {
+      background: rgba(196, 150, 62, 0.2);
+      color: var(--gold-light);
+      border-color: var(--border-gold);
+    }
+
+    /* SETTINGS GRID */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+      margin-bottom: 24px;
+    }
+
+    .setting-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+
+    .setting-box label {
+      display: block;
+      font-size: 12px;
+      color: var(--gold-light);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .select-custom {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-main);
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .select-custom:focus {
+      border-color: var(--border-gold);
+    }
+
+    /* ACTION BUTTON */
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #C4963E 0%, #D4AF37 50%, #9A1F1A 100%);
+      color: #0B0A08;
+      border: none;
+      border-radius: 8px;
+      padding: 16px 24px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 6px 20px rgba(196, 150, 62, 0.35);
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(212, 175, 55, 0.5);
+      filter: brightness(1.1);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* PROGRESS BAR */
+    .progress-container {
+      display: none;
+      margin-top: 24px;
+      padding: 18px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 8px;
+      background: #25201A;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold-primary), #68D391);
+      transition: width 0.3s ease;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .progress-msg {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .progress-percent {
+      color: var(--gold-primary);
+      font-weight: 700;
+      font-family: 'Cinzel', serif;
+    }
+
+    /* RESULTS SECTION */
+    .results-section {
+      display: none;
+      margin-top: 36px;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    @media (min-width: 1024px) {
+      .results-grid {
+        grid-template-columns: 1.15fr 0.85fr;
+      }
+    }
+
+    /* MEDIA PLAYER BOX */
+    .media-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .media-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 12px;
+    }
+
+    .media-title {
+      font-family: 'Cinzel', serif;
+      font-size: 17px;
+      color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-pill {
+      background: rgba(196, 150, 62, 0.15);
+      border: 1px solid var(--border-gold);
+      color: var(--gold-primary);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+
+    /* VIDEO WRAPPER */
+    .video-viewport {
+      width: 100%;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+      position: relative;
+    }
+
+    .video-viewport video {
+      width: 100%;
+      display: block;
+      max-height: 520px;
+    }
+
+    .btn-download-media {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px 18px;
+      background: rgba(45, 37, 26, 0.9);
+      border: 1px solid var(--border-gold);
+      color: var(--gold-light);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-download-media:hover {
+      background: var(--border-gold);
+      color: #0B0A08;
+      box-shadow: 0 0 14px var(--gold-glow);
+    }
+
+    /* AUDIO PODCAST PLAYER */
+    .audio-player-card {
+      margin-top: 20px;
+      background: #191612;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .audio-player-card audio {
+      width: 100%;
+      margin-top: 8px;
+      filter: invert(0.9) hue-rotate(180deg);
+    }
+
+    /* INTERACTIVE TRANSCRIPT */
+    .transcript-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      max-height: 780px;
+    }
+
+    .dialogue-list {
+      overflow-y: auto;
+      padding-right: 8px;
+      margin-top: 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .dialogue-item {
+      padding: 12px 14px;
+      border-radius: 8px;
+      border-left: 3px solid;
+      background: rgba(28, 25, 20, 0.7);
+      transition: all 0.2s ease;
+    }
+
+    .dialogue-item.host {
+      border-color: var(--gold-primary);
+    }
+
+    .dialogue-item.master {
+      border-color: var(--accent-cyan);
+    }
+
+    .dialogue-item:hover {
+      background: rgba(45, 37, 26, 0.85);
+      transform: translateX(3px);
+    }
+
+    .dialogue-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .speaker-name {
+      font-weight: 600;
+    }
+
+    .dialogue-item.host .speaker-name {
+      color: var(--gold-light);
+    }
+
+    .dialogue-item.master .speaker-name {
+      color: var(--accent-cyan);
+    }
+
+    .timestamp-pill {
+      background: rgba(11, 10, 8, 0.8);
+      border: 1px solid rgba(196, 150, 62, 0.4);
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: monospace;
+    }
+
+    .timestamp-pill:hover {
+      color: var(--gold-light);
+      border-color: var(--border-gold);
+    }
+
+    .dialogue-text {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--text-main);
+    }
+
+    /* SHOW NOTES SECTION */
+    .show-notes-card {
+      margin-top: 32px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 28px;
+    }
+
+    .show-notes-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 14px;
+    }
+
+    .notes-content {
+      font-size: 14.5px;
+      line-height: 1.75;
+      color: #E2DDD5;
+      white-space: pre-wrap;
+      font-family: inherit;
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      padding: 28px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 18px;
+      color: var(--gold-light);
+      margin-bottom: 14px;
+    }
+
+    .input-key {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-main);
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .input-key:focus {
+      outline: none;
+      border-color: var(--border-gold);
+    }
+
+    .modal-btns {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--border-gold);
+      border: none;
+      color: #0B0A08;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(11, 10, 8, 0.9);
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">☯</div>
+      <div>
+        <h1>CỬU NHỊ · STUDIO DỊCH HỌC</h1>
+        <p>Hệ thống tự động hóa Video MP4 & Podcast phân tích chuyên sâu</p>
+      </div>
+    </div>
+    <div class="board-switcher">
+      <a href="/direct" class="switcher-pill">☯ LUẬN TRỰC TIẾP (9:16)</a>
+      <a href="/direct-full" class="switcher-pill">📜 LUẬN & GHI ÂM FULL PHÂN TÍCH (9:16)</a>
+      <a href="/podcast" class="switcher-pill active">🎙 PODCAST & MP4 (16:9)</a>
+    </div>
+    <div class="header-actions">
+      <div id="apiKeyBadge" class="status-badge missing">
+        <span>●</span> <span id="apiKeyText">Đang tải...</span>
+      </div>
+      <button class="btn-key-modal" onclick="openKeyModal()">⚙ Cài đặt API</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+    <!-- HERO -->
+    <div class="hero-banner">
+      <span class="hero-tag">Chuyển Hóa Luận Trực Tiếp Sang Đàm Đạo Chuyên Sâu</span>
+      <h2 class="hero-title">Studio Video MP4 & Podcast Kinh Dịch Toàn Diện</h2>
+      <p class="hero-desc">
+        Tự động bốc quẻ trên <strong>ichingtarot.com</strong>, giải mã hào thế & tượng quẻ qua trí tuệ Gemini, biên soạn kịch bản đối thoại 2 người (Host Hoài My & Dịch Sư Nam Minh), thu âm đa giọng truyền cảm và kết xuất <strong>Video MP4 Full HD</strong> kèm phụ đề đồng bộ.
+      </p>
+    </div>
+
+    <!-- INPUT STUDIO -->
+    <div class="studio-card">
+      <div class="form-group">
+        <div class="question-header">
+          <label class="form-label" for="questionInput">✦ CÂU HỎI TRĂN TRỞ CỦA ĐƯƠNG SỐ:</label>
+          <div class="voice-input-actions">
+            <button id="btnVoiceRecord" class="btn-voice-mic" type="button" onclick="toggleVoiceRecording()" title="Bấm để nói câu hỏi bằng giọng nói">
+              <span id="micIcon" class="mic-icon">🎙️</span>
+              <span id="micText">Nói câu hỏi</span>
+            </button>
+            <button class="btn-clear-question" type="button" onclick="clearQuestion()" title="Xóa trắng câu hỏi">✕</button>
+          </div>
+        </div>
+        <div style="position: relative;">
+          <textarea id="questionInput" class="input-question" placeholder="Nhập câu hỏi hoặc bấm nút 'Nói câu hỏi' để tự động thu âm thành văn bản..."></textarea>
+          <div id="voiceStatusNotice" class="voice-status-notice">
+            <span class="pulse-dot"></span>
+            <span id="voiceStatusText">Đang lắng nghe... Hãy nói câu hỏi của bạn vào micro</span>
+          </div>
+        </div>
+        
+        <div class="quick-suggestions">
+          <span style="font-size: 11px; color: var(--gold-light); display: inline-flex; align-items: center; margin-right: 4px;">Gợi ý:</span>
+          <button class="pill-btn" onclick="setQuestion('Dự án khởi sự kinh doanh sắp tới của tôi có thuận buồm xuôi gió không?')">🚀 Khởi sự kinh doanh</button>
+          <button class="pill-btn" onclick="setQuestion('Công việc hiện tại nên tiếp tục gắn bó kiên định hay bứt phá chuyển hướng?')">💼 Công việc & Sự nghiệp</button>
+          <button class="pill-btn" onclick="setQuestion('Mối quan hệ hợp tác làm ăn này có hòa hợp và mang lại đại cát không?')">🤝 Hợp tác đối tác</button>
+          <button class="pill-btn" onclick="setQuestion('Xu thế tài chính và cơ hội đầu tư trong nửa năm tới sẽ biến chuyển thế nào?')">📈 Tài vận & Đầu tư</button>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="settings-grid">
+        <div class="setting-box">
+          <label>Trận pháp bốc quẻ (Spread):</label>
+          <select id="layoutSelect" class="select-custom">
+            <option value="random">✦ Ngẫu nhiên theo thời vận</option>
+            <option value="1_card">1 Lá · Nhất Diệp Tri Thu</option>
+            <option value="3_card">3 Lá · Tam Tài (Thiên - Địa - Nhân)</option>
+          </select>
+        </div>
+
+        <div class="setting-box">
+          <label>Định dạng Video MP4:</label>
+          <select id="aspectRatioSelect" class="select-custom">
+            <option value="16:9" selected>📺 16:9 Widescreen (YouTube, Web, TV)</option>
+            <option value="9:16">📱 9:16 Dọc (TikTok, Shorts, Reels)</option>
+          </select>
+        </div>
+
+        <div class="setting-box">
+          <label>Độ sâu & Phong cách Đàm đạo:</label>
+          <select id="durationModeSelect" class="select-custom">
+            <optgroup label="── THEO THỜI LƯỢNG & ĐỘ SÂU ──">
+              <option value="deep" selected>📜 Đàm Đạo Chuyên Sâu (10 - 14 lượt · 5 Hồi chuẩn mực)</option>
+              <option value="master">☯ Đại Luận Đạo Trưởng Lão (14 - 18 lượt · Uyên bác toàn diện)</option>
+              <option value="standard">🎙 Tiêu Chuẩn Đàm Đạo (8 - 10 lượt · Tự nhiên, vừa vặn)</option>
+              <option value="compact">☕ Tinh Gọn Cốt Tủy (6 - 8 lượt · Nhanh gọn 2.5 phút)</option>
+              <option value="quick">⚡ Siêu Tinh Gọn Cấp Tốc (4 - 6 lượt · Trọng tâm 1.5 phút)</option>
+            </optgroup>
+            <optgroup label="── THEO PHONG CÁCH & CHUYÊN ĐỀ ĐẶC THÙ ──">
+              <option value="debate">⚔️ Đối Thoại Phản Biện (Hỏi xoáy đáp xoay · Bóc tách rủi ro)</option>
+              <option value="business_tactics">💼 Binh Pháp Thương Trường (Kinh doanh & Khởi nghiệp thực chiến)</option>
+              <option value="zen_healing">🌿 Thiền Luận & Chữa Lành (Tĩnh tâm · Buông bỏ lo âu)</option>
+              <option value="relationship_care">❤️ Tâm Tình & Mối Quan Hệ (Hòa hợp · Nhân duyên đối đãi)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="setting-box">
+          <label>Giọng đọc & Thuyết minh:</label>
+          <select id="voiceSelect" class="select-custom">
+            <option value="duet_standard" selected>🎙️ Song Ca: Hoài My & Dịch Sư Nam Minh (Mặc định)</option>
+            <option value="duet_elder">🧙‍♂️ Song Ca: Hoài My & Trưởng Lão Nam Minh (Chậm rãi, tôn nghiêm)</option>
+            <option value="duet_zen">🧘‍♀️ Thiền Trà: Hoài My Thiền Định & Nam Minh Trầm Lắng</option>
+            <option value="namminh_solo">👨‍🏫 Độc thoại: Dịch Sư Nam Minh (Trầm ấm, uyên bác)</option>
+            <option value="namminh_elder">📜 Độc thoại: Trưởng Lão Nam Minh (Cổ kính, thâm thúy)</option>
+            <option value="hoaimy_solo">🌸 Độc thoại: Chủ Tọa Hoài My (Dịu dàng, truyền cảm)</option>
+            <option value="hoaimy_zen">🪷 Độc thoại: Hoài My Thiền Định (Thanh tịnh, chữa lành)</option>
+            <option value="gtts_standard">🤖 Độc thoại: Google AI Voice (Điềm đạm, rõ ràng)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ACTION BUTTON -->
+      <button id="btnSubmit" class="btn-submit" onclick="startGeneration()">
+        <span>🚀 BẮT ĐẦU SẢN XUẤT VIDEO MP4 & PODCAST CHUYÊN SÂU</span>
+      </button>
+
+      <!-- PROGRESS -->
+      <div id="progressContainer" class="progress-container">
+        <div class="progress-bar-wrap">
+          <div id="progressBarFill" class="progress-bar-fill"></div>
+        </div>
+        <div class="progress-info">
+          <span id="progressMsg" class="progress-msg">Đang khởi tạo studio...</span>
+          <span id="progressPercent" class="progress-percent">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS SECTION -->
+    <div id="resultsSection" class="results-section">
+      <div class="results-grid">
+        <!-- LEFT: VIDEO & AUDIO PLAYERS -->
+        <div class="media-card">
+          <div class="media-header">
+            <div class="media-title">
+              <span>🎬 VIDEO MP4 PODCAST FULL HD</span>
+              <span id="resBadgeRatio" class="badge-pill">16:9</span>
+            </div>
+            <span id="resDuration" style="font-size: 13px; color: var(--gold-light); font-family: monospace;">00:00</span>
+          </div>
+
+          <!-- VIDEO PLAYER -->
+          <div class="video-viewport">
+            <video id="videoPlayer" controls playsinline preload="metadata">
+              Trình duyệt của bạn không hỗ trợ thẻ video.
+            </video>
+          </div>
+
+          <a id="btnDownloadVideo" href="#" download class="btn-download-media">
+            <span>⬇ TẢI VIDEO MP4 FULL HD</span>
+          </a>
+
+          <!-- AUDIO PODCAST PLAYER -->
+          <div class="audio-player-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13px; font-weight: 600; color: var(--gold-light);">🎙 BẢN AUDIO PODCAST MP3 (432Hz)</span>
+              <span style="font-size: 11px; color: var(--text-muted);">Âm thanh vòm thiền định</span>
+            </div>
+            <audio id="audioPlayer" controls preload="metadata"></audio>
+            <a id="btnDownloadAudio" href="#" download class="btn-download-media" style="margin-top: 10px; font-size: 13px; padding: 8px 14px;">
+              <span>⬇ TẢI FILE MP3 PODCAST</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- RIGHT: INTERACTIVE TRANSCRIPT -->
+        <div class="transcript-card">
+          <div class="media-header" style="margin-bottom: 8px;">
+            <div class="media-title">
+              <span>📜 BẢN GHI ÂM ĐÀM ĐẠO (TRANSCRIPT)</span>
+            </div>
+            <span style="font-size: 11px; color: var(--text-muted);">Bấm mốc giờ để tua</span>
+          </div>
+
+          <div id="dialogueList" class="dialogue-list">
+            <!-- Populated via JavaScript -->
+          </div>
+        </div>
+      </div>
+
+      <!-- SHOW NOTES SECTION -->
+      <div class="show-notes-card">
+        <div class="show-notes-header">
+          <div class="media-title">
+            <span id="resPodcastTitle">☯ CỬU NHỊ LUẬN ĐẠO · BẢN PHÂN TÍCH CHUYÊN SÂU</span>
+          </div>
+          <button class="btn-key-modal" onclick="copyShowNotes()">📋 Sao chép Show Notes</button>
+        </div>
+
+        <div id="showNotesContent" class="notes-content">
+          <!-- Populated via JavaScript -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- API KEY MODAL -->
+  <div id="keyModal" class="modal-backdrop">
+    <div class="modal-content">
+      <h3 class="modal-title">⚙ Cài Đặt Google Gemini API Key</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
+        Khóa API được lưu an toàn cục bộ trong tệp <code>.env</code> trên máy của bạn. Bạn có thể lấy khóa miễn phí tại Google AI Studio.
+      </p>
+      <input type="password" id="inputApiKey" class="input-key" placeholder="Nhập API Key (ví dụ: AIzaSy... hoặc AQ...)">
+      <div class="modal-btns">
+        <button class="btn-secondary" onclick="closeKeyModal()">Hủy</button>
+        <button class="btn-primary" onclick="saveApiKey()">Lưu Khóa API</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>Cửu Nhị · Hệ Thống Luận Giải Kinh Dịch & Tự Động Xuất Bản Video MP4 cùng Podcast Phân Tích Chuyên Sâu</p>
+  </footer>
+
+  <script>
+    let pollInterval = null;
+
+    // Load initial config
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        const badge = document.getElementById('apiKeyBadge');
+        const text = document.getElementById('apiKeyText');
+
+        if (data.has_api_key) {
+          badge.className = 'status-badge ready';
+          text.innerText = 'API Sẵn Sàng (' + data.masked_key + ')';
+        } else {
+          badge.className = 'status-badge missing';
+          text.innerText = 'Chưa thiết lập API Key';
+        }
+
+        if (data.default_aspect_ratio) {
+          document.getElementById('aspectRatioSelect').value = data.default_aspect_ratio;
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải cấu hình:', err);
+      }
+    }
+
+    let speechRecognizer = null;
+    let isRecordingSpeech = false;
+    let isTranscribingSpeech = false;
+    let webSpeechFailedBefore = false;
+    let mediaRecorder = null;
+    let activeMicStream = null;
+    let audioChunks = [];
+    let voiceRecordTimer = null;
+    let voiceRecordSeconds = 0;
+    let voiceBaseText = '';
+    let liveSpeechText = '';
+
+    function getQuestionInputEl() {
+      return document.getElementById('questionInput') || document.getElementById('question');
+    }
+
+    function clearQuestion() {
+      const qInput = getQuestionInputEl();
+      if (qInput) {
+        qInput.value = '';
+        qInput.focus();
+      }
+    }
+
+    function formatVoiceTimer(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function updateVoiceUI(isRecording, msg, isProcessing = false) {
+      const btn = document.getElementById('btnVoiceRecord');
+      const micIcon = document.getElementById('micIcon');
+      const micText = document.getElementById('micText');
+      const notice = document.getElementById('voiceStatusNotice');
+      const noticeText = document.getElementById('voiceStatusText');
+
+      if (!btn) return;
+
+      if (isProcessing) {
+        btn.classList.remove('recording');
+        btn.disabled = true;
+        if (micIcon) micIcon.innerText = '⏳';
+        if (micText) micText.innerText = 'Đang dịch...';
+        if (notice) notice.classList.add('active');
+        if (noticeText) noticeText.innerText = msg || '⚡ Đang nhận diện giọng nói tiếng Việt...';
+      } else if (isRecording) {
+        btn.disabled = false;
+        btn.classList.add('recording');
+        if (micIcon) micIcon.innerText = '🔴';
+        if (micText) micText.innerText = `Đang nghe (${formatVoiceTimer(voiceRecordSeconds)}) · Bấm để xong`;
+        if (notice) notice.classList.add('active');
+        if (noticeText) noticeText.innerText = msg || 'Đang thu âm câu hỏi... Hãy nói vào micro rồi bấm lại nút mic khi xong';
+      } else {
+        btn.disabled = false;
+        btn.classList.remove('recording');
+        if (micIcon) micIcon.innerText = '🎙️';
+        if (micText) micText.innerText = 'Nói câu hỏi';
+        if (notice) notice.classList.remove('active');
+      }
+    }
+
+    function toggleVoiceRecording() {
+      if (isTranscribingSpeech) return;
+      if (isRecordingSpeech) {
+        stopVoiceRecording();
+      } else {
+        startVoiceRecording();
+      }
+    }
+
+    function getSupportedAudioMimeType() {
+      if (typeof MediaRecorder === 'undefined') return '';
+      const types = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4'
+      ];
+      for (const t of types) {
+        try {
+          if (MediaRecorder.isTypeSupported(t)) return t;
+        } catch (e) {}
+      }
+      return '';
+    }
+
+    async function startVoiceRecording() {
+      const qInput = getQuestionInputEl();
+      if (!qInput) return;
+
+      voiceBaseText = qInput.value.trim();
+      if (voiceBaseText && !voiceBaseText.endsWith(' ')) {
+        voiceBaseText += ' ';
+      }
+      liveSpeechText = '';
+      voiceRecordSeconds = 0;
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Trình duyệt không hỗ trợ truy cập Microphone.');
+        return;
+      }
+
+      try {
+        activeMicStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+      } catch (err) {
+        console.error('Không thể mở micro:', err);
+        alert('Không thể truy cập Microphone. Vui lòng cấp quyền micro cho trình duyệt rồi thử lại.');
+        updateVoiceUI(false);
+        return;
+      }
+
+      try {
+        audioChunks = [];
+        const mimeType = getSupportedAudioMimeType();
+        mediaRecorder = mimeType
+          ? new MediaRecorder(activeMicStream, { mimeType })
+          : new MediaRecorder(activeMicStream);
+
+        mediaRecorder.onstart = () => {
+          isRecordingSpeech = true;
+          voiceRecordSeconds = 0;
+          updateVoiceUI(true, '🎙️ Đang thu âm câu hỏi tiếng Việt... Nói xong hãy bấm lại nút mic');
+          if (voiceRecordTimer) clearInterval(voiceRecordTimer);
+          voiceRecordTimer = setInterval(() => {
+            voiceRecordSeconds += 1;
+            if (isRecordingSpeech) {
+              updateVoiceUI(true, '🎙️ Đang thu âm câu hỏi tiếng Việt... Nói xong hãy bấm lại nút mic');
+            }
+            if (voiceRecordSeconds >= 60) {
+              stopVoiceRecording();
+            }
+          }, 1000);
+        };
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            audioChunks.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          if (voiceRecordTimer) {
+            clearInterval(voiceRecordTimer);
+            voiceRecordTimer = null;
+          }
+          if (activeMicStream) {
+            try {
+              activeMicStream.getTracks().forEach(track => track.stop());
+            } catch (e) {}
+            activeMicStream = null;
+          }
+
+          const blobType = (mediaRecorder && mediaRecorder.mimeType) || mimeType || 'audio/webm';
+          const audioBlob = new Blob(audioChunks, { type: blobType });
+
+          if (audioBlob.size < 300) {
+            isRecordingSpeech = false;
+            isTranscribingSpeech = false;
+            updateVoiceUI(false);
+            return;
+          }
+
+          isRecordingSpeech = false;
+          isTranscribingSpeech = true;
+          updateVoiceUI(false, '⚡ Đang nhận diện giọng nói thành văn bản tiếng Việt...', true);
+
+          try {
+            const res = await fetch('/api/transcribe', {
+              method: 'POST',
+              headers: { 'Content-Type': blobType },
+              body: audioBlob
+            });
+            const data = await res.json();
+            if (data.success && data.text && data.text.trim()) {
+              qInput.value = voiceBaseText + data.text.trim();
+              qInput.focus();
+              qInput.scrollTop = qInput.scrollHeight;
+            } else if (!liveSpeechText.trim()) {
+              const notice = document.getElementById('voiceStatusNotice');
+              const noticeText = document.getElementById('voiceStatusText');
+              if (notice && noticeText) {
+                notice.classList.add('active');
+                noticeText.innerText = '⚠ ' + (data.error || 'Không nghe rõ câu hỏi. Hãy nói to, rõ hơn vào micro.');
+                setTimeout(() => {
+                  if (!isRecordingSpeech) notice.classList.remove('active');
+                }, 3800);
+              }
+            }
+          } catch (err) {
+            console.error('Lỗi khi gửi bản ghi âm:', err);
+            if (!liveSpeechText.trim()) {
+              alert('Lỗi kết nối khi nhận diện giọng nói.');
+            }
+          } finally {
+            isTranscribingSpeech = false;
+            updateVoiceUI(false);
+          }
+        };
+
+        mediaRecorder.start(250);
+      } catch (err) {
+        console.error('Lỗi khởi tạo MediaRecorder:', err);
+        if (activeMicStream) {
+          try { activeMicStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+          activeMicStream = null;
+        }
+        updateVoiceUI(false);
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition && !webSpeechFailedBefore) {
+        try {
+          const rec = new SpeechRecognition();
+          rec.lang = 'vi-VN';
+          rec.continuous = true;
+          rec.interimResults = true;
+          let finalTranscript = '';
+
+          rec.onresult = (event) => {
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              const r = event.results[i];
+              if (r.isFinal) {
+                finalTranscript += r[0].transcript + ' ';
+              } else {
+                interimTranscript += r[0].transcript;
+              }
+            }
+            liveSpeechText = (finalTranscript + interimTranscript).trim();
+            if (liveSpeechText) {
+              qInput.value = voiceBaseText + liveSpeechText;
+              qInput.scrollTop = qInput.scrollHeight;
+            }
+          };
+
+          rec.onerror = (event) => {
+            if (event.error === 'network' || event.error === 'service-not-allowed' || event.error === 'not-allowed') {
+              webSpeechFailedBefore = true;
+            }
+            try { rec.stop(); } catch (e) {}
+            if (speechRecognizer === rec) {
+              speechRecognizer = null;
+            }
+          };
+
+          rec.onend = () => {
+            if (speechRecognizer === rec) {
+              speechRecognizer = null;
+            }
+          };
+
+          speechRecognizer = rec;
+          rec.start();
+        } catch (e) {
+          speechRecognizer = null;
+        }
+      }
+    }
+
+    function stopVoiceRecording() {
+      isRecordingSpeech = false;
+      if (voiceRecordTimer) {
+        clearInterval(voiceRecordTimer);
+        voiceRecordTimer = null;
+      }
+
+      if (speechRecognizer) {
+        const rec = speechRecognizer;
+        speechRecognizer = null;
+        try { rec.stop(); } catch (e) {}
+      }
+
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try {
+          mediaRecorder.stop();
+        } catch (e) {
+          updateVoiceUI(false);
+        }
+      } else {
+        if (activeMicStream) {
+          try { activeMicStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+          activeMicStream = null;
+        }
+        updateVoiceUI(false);
+      }
+    }
+
+    function setQuestion(text) {
+      document.getElementById('questionInput').value = text;
+      document.getElementById('questionInput').focus();
+    }
+
+    function openKeyModal() {
+      document.getElementById('keyModal').classList.add('show');
+    }
+
+    function closeKeyModal() {
+      document.getElementById('keyModal').classList.remove('show');
+    }
+
+    async function saveApiKey() {
+      const key = document.getElementById('inputApiKey').value.trim();
+      if (!key) {
+        alert('Vui lòng nhập API Key hợp lệ.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/save_key', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ api_key: key })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Đã lưu API Key thành công!');
+          closeKeyModal();
+          loadConfig();
+        } else {
+          alert('Lỗi: ' + data.message);
+        }
+      } catch (e) {
+        alert('Lỗi kết nối máy chủ.');
+      }
+    }
+
+    async function startGeneration() {
+      const q = document.getElementById('questionInput').value.trim();
+      if (!q) {
+        alert('Vui lòng nhập câu hỏi cần chiêm bốc trước khi bắt đầu.');
+        document.getElementById('questionInput').focus();
+        return;
+      }
+
+      const layout = document.getElementById('layoutSelect').value;
+      const aspect_ratio = document.getElementById('aspectRatioSelect').value;
+      const duration_mode = document.getElementById('durationModeSelect').value;
+      const voice = document.getElementById('voiceSelect').value;
+
+      document.getElementById('btnSubmit').disabled = true;
+      document.getElementById('progressContainer').style.display = 'block';
+      document.getElementById('resultsSection').style.display = 'none';
+
+      try {
+        const res = await fetch('/api/podcast/run', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            question: q,
+            layout: layout,
+            aspect_ratio: aspect_ratio,
+            duration_mode: duration_mode,
+            voice: voice
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          alert(err.message || 'Lỗi khi kích hoạt tiến trình.');
+          document.getElementById('btnSubmit').disabled = false;
+          return;
+        }
+
+        // Start Polling Status
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(checkStatus, 1500);
+
+      } catch (e) {
+        alert('Lỗi kết nối máy chủ.');
+        document.getElementById('btnSubmit').disabled = false;
+      }
+    }
+
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/podcast/status');
+        const job = await res.json();
+
+        const pFill = document.getElementById('progressBarFill');
+        const pMsg = document.getElementById('progressMsg');
+        const pPercent = document.getElementById('progressPercent');
+
+        pFill.style.width = job.percent + '%';
+        pPercent.innerText = job.percent + '%';
+        pMsg.innerText = job.message || 'Đang thực hiện...';
+
+        if (job.status === 'completed') {
+          clearInterval(pollInterval);
+          document.getElementById('btnSubmit').disabled = false;
+          displayResults(job.result);
+        } else if (job.status === 'error') {
+          clearInterval(pollInterval);
+          document.getElementById('btnSubmit').disabled = false;
+          alert('Tiến trình bị gián đoạn: ' + job.message);
+        }
+      } catch (err) {
+        console.error('Lỗi kiểm tra tiến trình:', err);
+      }
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function displayResults(data) {
+      if (!data) return;
+
+      document.getElementById('resultsSection').style.display = 'block';
+
+      // Video Player
+      const vid = document.getElementById('videoPlayer');
+      vid.src = data.video_url;
+      document.getElementById('btnDownloadVideo').href = data.video_url;
+      document.getElementById('resBadgeRatio').innerText = data.aspect_ratio || '16:9';
+      document.getElementById('resDuration').innerText = formatTime(data.duration || 0);
+
+      // Audio Player
+      const aud = document.getElementById('audioPlayer');
+      aud.src = data.audio_url;
+      document.getElementById('btnDownloadAudio').href = data.audio_url;
+
+      // Podcast Title
+      document.getElementById('resPodcastTitle').innerText = data.podcast_title || data.hexagram_title;
+
+      // Dialogue Transcript
+      const dList = document.getElementById('dialogueList');
+      dList.innerHTML = '';
+
+      const timeline = data.timeline || [];
+      timeline.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = `dialogue-item ${item.speaker}`;
+
+        const isHost = (item.speaker === 'host');
+        const icon = isHost ? '🎙' : '☯';
+        const speakerLabel = isHost ? 'Hoài My (Chủ Tọa)' : 'Dịch Sư Nam Minh';
+
+        div.innerHTML = `
+          <div class="dialogue-meta">
+            <span class="speaker-name">${icon} ${speakerLabel}</span>
+            <span class="timestamp-pill" onclick="seekBoth(${item.start_time})">▶ ${formatTime(item.start_time)}</span>
+          </div>
+          <div class="dialogue-text">${item.text}</div>
+        `;
+        dList.appendChild(div);
+      });
+
+      // Show Notes
+      document.getElementById('showNotesContent').innerText = data.full_show_notes || 'Chưa có ghi chép chi tiết.';
+
+      // Scroll to results
+      document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function seekBoth(timeInSeconds) {
+      const vid = document.getElementById('videoPlayer');
+      const aud = document.getElementById('audioPlayer');
+
+      if (vid) {
+        vid.currentTime = timeInSeconds;
+        vid.play();
+      }
+      if (aud) {
+        aud.currentTime = timeInSeconds;
+      }
+    }
+
+    function copyShowNotes() {
+      const content = document.getElementById('showNotesContent').innerText;
+      navigator.clipboard.writeText(content).then(() => {
+        alert('Đã sao chép toàn văn Show Notes vào bộ nhớ tạm (Clipboard)!');
+      });
+    }
+
+    window.onload = loadConfig;
+  </script>
+</body>
+</html>

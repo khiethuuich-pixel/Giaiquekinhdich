@@ -1,0 +1,33 @@
+# Environment & Secrets
+.env
+
+# Python Bytecode & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Scratch & Temporary Test Audio in Root
+scratch/
+/*.mp3
+/*.wav
+
+# Auto-generated Ambient Pads
+assets/ambient_zen_*.wav
+
+# Duplicate Video in Images Folder
+static/images/dragon/full.mp4
+
+# Sub-project Large Models & Outputs
+iching_podcast_system/models/*.onnx
+iching_podcast_system/models/*.onnx.json
+iching_podcast_system/output/
+
+# Generated Outputs (keep only Dragon Stage Loop Videos needed by UI)
+output/*
+!output/videos/
+output/videos/*
+!output/videos/canh_*.mp4
+!output/videos/full*.mp4
