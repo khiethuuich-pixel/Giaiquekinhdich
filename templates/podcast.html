@@ -1423,11 +1423,10 @@
     }
 
     async function startGeneration() {
-      const q = document.getElementById('questionInput').value.trim();
+      let q = document.getElementById('questionInput').value.trim();
       if (!q) {
-        alert('Vui lòng nhập câu hỏi cần chiêm bốc trước khi bắt đầu.');
-        document.getElementById('questionInput').focus();
-        return;
+        q = 'Dự án khởi sự kinh doanh sắp tới của tôi có thuận buồm xuôi gió không?';
+        document.getElementById('questionInput').value = q;
       }
 
       const layout = document.getElementById('layoutSelect').value;
@@ -1459,8 +1458,12 @@
           return;
         }
 
-        if ('Notification' in window && Notification.permission === 'default') {
-          try { Notification.requestPermission(); } catch (e) {}
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+          try {
+            if (Notification.permission === 'default') {
+              Notification.requestPermission().catch(() => {});
+            }
+          } catch (e) {}
         }
 
         // Start Polling Status via Web Worker (unthrottled in background tabs)
@@ -1470,9 +1473,15 @@
           const blob = new Blob(["setInterval(function(){ postMessage('tick'); }, 1000);"], { type: 'application/javascript' });
           window._podcastWorker = new Worker(URL.createObjectURL(blob));
           window._podcastWorker.onmessage = () => checkStatus();
+          window._podcastWorker.onerror = () => {
+            if (!pollInterval) pollInterval = setInterval(checkStatus, 1000);
+          };
         } catch (e) {
           pollInterval = setInterval(checkStatus, 1000);
         }
+        setTimeout(() => {
+          if (!pollInterval) pollInterval = setInterval(checkStatus, 1000);
+        }, 2000);
 
       } catch (e) {
         alert('Lỗi kết nối máy chủ.');

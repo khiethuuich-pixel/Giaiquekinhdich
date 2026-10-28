@@ -1279,8 +1279,11 @@
     }
 
     async function startAutomation() {
-      const question = document.getElementById('question').value.trim();
-      if (!question) return alert('Vui lòng nhập câu hỏi của bạn.');
+      let question = document.getElementById('question').value.trim();
+      if (!question) {
+        question = 'Xin quẻ Kinh Dịch chỉ dẫn thời vận và định hướng hành động tối ưu';
+        document.getElementById('question').value = question;
+      }
 
       const voice = document.getElementById('voice').value;
       const btn = document.getElementById('btn-submit');
@@ -1598,17 +1601,29 @@
         player.style.display = 'none';
         placeholder.style.display = 'flex';
       }
-      if ('Notification' in window && Notification.permission === 'default') {
-        try { Notification.requestPermission(); } catch (e) {}
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        try {
+          if (Notification.permission === 'default') {
+            Notification.requestPermission().catch(() => {});
+          }
+        } catch (e) {}
       }
       pollStatusOnce();
       try {
         const blob = new Blob(["setInterval(function(){ postMessage('tick'); }, 1000);"], { type: 'application/javascript' });
         bgWorker = new Worker(URL.createObjectURL(blob));
         bgWorker.onmessage = () => pollStatusOnce();
+        bgWorker.onerror = () => {
+          if (!pollInterval) pollInterval = setInterval(pollStatusOnce, 1000);
+        };
       } catch (e) {
         pollInterval = setInterval(pollStatusOnce, 1000);
       }
+      setTimeout(() => {
+        if (isPipelineRunning && !pollInterval) {
+          pollInterval = setInterval(pollStatusOnce, 1000);
+        }
+      }, 2000);
     }
 
     function showResult(r, autoSwitchToVideo = true) {

@@ -1494,19 +1494,20 @@
       }
 
       if (!question) {
-        if (customAnalysis) {
-          question = 'Luận giải quẻ Kinh Dịch';
-        } else {
-          return alert('Vui lòng nhập câu hỏi của bạn.');
-        }
+        question = customAnalysis ? 'Luận giải quẻ Kinh Dịch' : 'Xin quẻ Kinh Dịch chỉ dẫn thời vận và định hướng hành động tối ưu';
+        document.getElementById('question').value = question;
       }
 
       const voice = document.getElementById('voice').value;
       const btn = document.getElementById('btn-submit');
       const btnPasted = document.getElementById('btn-render-pasted');
 
-      if ('Notification' in window && Notification.permission === 'default') {
-        try { Notification.requestPermission(); } catch (e) {}
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        try {
+          if (Notification.permission === 'default') {
+            Notification.requestPermission().catch(() => {});
+          }
+        } catch (e) {}
       }
 
       btn.disabled = true;
@@ -1877,9 +1878,17 @@
         ], { type: 'application/javascript' });
         bgWorker = new Worker(URL.createObjectURL(blob));
         bgWorker.onmessage = () => pollStatusOnce();
+        bgWorker.onerror = () => {
+          if (!pollInterval) pollInterval = setInterval(pollStatusOnce, 1000);
+        };
       } catch (e) {
         pollInterval = setInterval(pollStatusOnce, 1000);
       }
+      setTimeout(() => {
+        if (isPipelineRunning && !pollInterval) {
+          pollInterval = setInterval(pollStatusOnce, 1000);
+        }
+      }, 2000);
     }
 
     function showResult(r, autoSwitchToVideo = true) {
