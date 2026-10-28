@@ -52,6 +52,10 @@ app.add_middleware(
 
 # Mount media directories
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+if (BASE_DIR / "static" / "images" / "dragon").exists():
+    app.mount("/images/dragon", StaticFiles(directory=str(BASE_DIR / "static" / "images" / "dragon")), name="dragon_images")
+if (BASE_DIR / "static" / "videos").exists():
+    app.mount("/videos", StaticFiles(directory=str(BASE_DIR / "static" / "videos")), name="dragon_videos")
 app.mount("/media/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
 app.mount("/media/podcasts", StaticFiles(directory=str(PODCASTS_DIR)), name="podcasts")
 app.mount("/media/audio", StaticFiles(directory=str(AUDIO_DIR)), name="audio")
@@ -231,6 +235,16 @@ class PodcastRequest(BaseModel):
 
 class SaveKeyRequest(BaseModel):
     api_key: str
+
+class DragonAgentChatRequest(BaseModel):
+    user_message: str
+    main_question: str = ""
+    hexagram_text: str = ""
+    full_interpretation: str = ""
+    history: list[dict] = []
+    with_voice: bool = True
+    voice: str = DEFAULT_VOICE
+    api_key: str = ""
 
 # ==========================================
 # HTML ROUTING
@@ -702,6 +716,61 @@ async def api_direct_home_run(req: DirectHomeRequest, background_tasks: Backgrou
         "saved_image_url": f"/media/images/{Path(saved_image_path).name}" if saved_image_path else "",
         "message": f"Đã chụp xong thẻ bài! Tiến trình đang chạy ngầm (Dự kiến hoàn tất trong {format_eta_vi(est_eta)})..."
     }
+
+# ==========================================
+# 1D. APIS DÀNH CHO 3D AI AGENT TIỂU LONG CỬU NHỊ (VẤN ĐÁP QUẺ DỊCH TRONG ĐIỆN THOẠI Ở TRANG CHỦ)
+# ==========================================
+
+@app.get("/api/dragon_agent/poses")
+async def api_get_dragon_poses():
+    from gemini_sage import DRAGON_AGENT_POSES
+    return {"success": True, "poses": list(DRAGON_AGENT_POSES.values())}
+
+@app.post("/api/dragon_agent/chat")
+async def api_dragon_agent_chat(req: DragonAgentChatRequest):
+    """3D AI Agent Tiểu Long Cửu Nhị vấn đáp trực tiếp về quẻ dịch và câu hỏi trong điện thoại ở trang chủ."""
+    import asyncio
+    from gemini_sage import dragon_agent_chat
+    from voice_engine import _synthesize_text_to_mp3, get_audio_duration
+
+    try:
+        chat_res = await asyncio.to_thread(
+            dragon_agent_chat,
+            user_message=req.user_message,
+            main_question=req.main_question,
+            hexagram_text=req.hexagram_text,
+            full_interpretation=req.full_interpretation,
+            history=req.history,
+            api_key=req.api_key or None
+        )
+
+        audio_url = ""
+        audio_duration = 0.0
+        if req.with_voice and chat_res.get("reply"):
+            try:
+                ts = int(time.time() * 1000)
+                out_mp3 = AUDIO_DIR / f"dragon_3d_qa_{ts}.mp3"
+                voice_id = req.voice or DEFAULT_VOICE
+                await _synthesize_text_to_mp3(chat_res["reply"], voice_id, out_mp3, is_full_analysis=False)
+                if out_mp3.exists() and out_mp3.stat().st_size > 200:
+                    audio_url = f"/media/audio/{out_mp3.name}"
+                    audio_duration = round(get_audio_duration(str(out_mp3)), 1)
+            except Exception as ve:
+                print(f"[DragonAgent TTS Warning]: {ve}")
+
+        return {
+            "success": True,
+            **chat_res,
+            "audio_url": audio_url,
+            "audio_duration": audio_duration,
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": f"Lỗi khi vấn đáp cùng Tiểu Long 3D: {str(e)}"}
+        )
 
 # ==========================================
 # 2. APIS DÀNH CHO BẢNG MỚI (PODCAST & MP4 FULL HD)

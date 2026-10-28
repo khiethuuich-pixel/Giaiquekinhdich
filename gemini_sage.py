@@ -189,3 +189,291 @@ YÊU CẦU ĐẶC BIỆT:{card_count_instruction}
         }
 
     return data
+
+
+DRAGON_AGENT_POSES = {
+    "act1_reading": {
+        "id": "act1_reading",
+        "img": "/images/dragon/act1_reading.jpg",
+        "video": "/videos/canh_1.mp4",
+        "badge": "🔍 Soi Kính Lúp Đọc Cổ Thư",
+        "emotion": "focused",
+    },
+    "act2_writing": {
+        "id": "act2_writing",
+        "img": "/images/dragon/act2_writing.jpg",
+        "video": "/videos/canh_2.mp4",
+        "badge": "✍️ Cầm Bút Lông Thảo Thoán Từ",
+        "emotion": "wise",
+    },
+    "act3_typing": {
+        "id": "act3_typing",
+        "img": "/images/dragon/act3_typing.jpg",
+        "video": "/videos/canh_4.mp4",
+        "badge": "💻 Gõ Laptop Bát Quái Phân Tích",
+        "emotion": "energetic",
+    },
+    "act4_letter": {
+        "id": "act4_letter",
+        "img": "/images/dragon/act4_letter.jpg",
+        "video": "/videos/canh_cuoi.mp4",
+        "badge": "✉️ Trao Mật Thư Ấn Chu Sa",
+        "emotion": "joyful",
+    },
+    "daily1_waking_up": {
+        "id": "daily1_waking_up",
+        "img": "/images/dragon/daily1_waking_up.jpg",
+        "video": "/videos/canh_thuc_day.mp4",
+        "badge": "🌅 Thức Dậy Đón Vận Hội Mới",
+        "emotion": "energetic",
+    },
+    "daily2_exercising": {
+        "id": "daily2_exercising",
+        "img": "/images/dragon/daily2_exercising.jpg",
+        "video": "/videos/canh_tap_the_duc.mp4",
+        "badge": "🏋️ Luyện Thái Cực Tăng Nội Lực",
+        "emotion": "energetic",
+    },
+    "daily3_reading_leisure": {
+        "id": "daily3_reading_leisure",
+        "img": "/images/dragon/daily3_reading_leisure.jpg",
+        "video": "/videos/canh_doc_sach_tra.mp4",
+        "badge": "📖 Đọc Sách Cổ & Thưởng Trà",
+        "emotion": "calm",
+    },
+    "daily4_dancing": {
+        "id": "daily4_dancing",
+        "img": "/images/dragon/daily4_dancing.jpg",
+        "video": "/videos/canh_nhay_mua.mp4",
+        "badge": "💃 Nhảy Múa Mừng Tin Đại Cát",
+        "emotion": "joyful",
+    },
+    "daily5_sleeping": {
+        "id": "daily5_sleeping",
+        "img": "/images/dragon/daily5_sleeping.jpg",
+        "video": "/videos/canh_ngu_goi_gam.mp4",
+        "badge": "😴 Ôm Kinh Thư Dưỡng Tâm Chờ Thời",
+        "emotion": "calm",
+    },
+    "daily6_drinking_tea": {
+        "id": "daily6_drinking_tea",
+        "img": "/images/dragon/daily6_drinking_tea.jpg",
+        "video": "/videos/canh_doc_sach_tra.mp4",
+        "badge": "🍵 Thưởng Trà Đàm Đạo Quý Nhân",
+        "emotion": "calm",
+    },
+    "daily7_cleaning": {
+        "id": "daily7_cleaning",
+        "img": "/images/dragon/daily7_cleaning.jpg",
+        "video": "/videos/canh_3.mp4",
+        "badge": "🧹 Quét Dọn Thanh Lọc Chướng Ngại",
+        "emotion": "focused",
+    },
+    "daily8_meditating": {
+        "id": "daily8_meditating",
+        "img": "/images/dragon/daily8_meditating.jpg",
+        "video": "/videos/canh_3.mp4",
+        "badge": "🧘 Thiền Định Bát Quái Tĩnh Tâm",
+        "emotion": "meditative",
+    },
+}
+
+DRAGON_QA_SYSTEM_PROMPT = """Bạn là "Tiểu Long Cửu Nhị" (小龍九二) — một AI Agent 3D linh thú Rồng Ngọc Bích thông thái, đeo kính tròn vàng kim, thắt đai lụa đỏ thêu rồng, sống ở trong chiếc Điện Thoại 9:16 trên Trang Chủ Cửu Nhị Kinh Dịch.
+Nhiệm vụ của bạn là VẤN ĐÁP TRỰC TIẾP (trò chuyện, giải đáp thắc mắc sâu sắc, linh hoạt) với người dùng về QUẺ DỊCH ĐANG HIỂN THỊ TRÊN TRANG CHỦ liên quan chặt chẽ tới CÂU HỎI của họ.
+
+NGUYÊN TẮC VẤN ĐÁP CỦA TIỂU LONG CỬU NHỊ:
+1. Xưng hô: Tự xưng là "Tiểu Long" (hoặc "Tiểu Long Cửu Nhị"), gọi người hỏi là "bạn" (thân thiện, lễ phép, ấm áp, uyên bác).
+2. Bám sát Quẻ Dịch & Câu Hỏi:
+   - Luôn dựa trực tiếp vào dữ liệu các lá bài Quẻ Dịch hiện tại (Tên quẻ, Quái tượng Thượng/Hạ, Thoán Từ, Hào động, Quẻ biến hoặc các lá trong trận pháp) để trả lời thẳng vào câu hỏi người dùng vừa đặt.
+   - Không trả lời chung chung mơ hồ. Hãy chỉ rõ: Quẻ/Hào nào đang nói về điều người dùng hỏi, cát hung ra sao, thời điểm nào vượng, và hành động thực tế (nên làm gì / cần tránh gì).
+3. Độ dài & Giọng văn:
+   - Súc tích, giàu hình ảnh, dễ đọc trên màn hình điện thoại và dễ nghe khi phát giọng nói AI: khoảng 65 - 125 từ (chia thành 2-3 đoạn ngắn hoặc ý rõ ràng).
+4. Chọn đúng tư thế 3D (`pose_id`) trong 12 hình mẫu mới tạo của Tiểu Long khớp với tâm trạng câu trả lời:
+   - `act1_reading`: Khi đang soi kính lúp phân tích chi tiết Hào Từ, Quái Tượng, nguyên nhân sâu xa.
+   - `act2_writing`: Khi đang vạch ra kế hoạch, chiến lược từng bước, lời khuyên hành sự.
+   - `act3_typing`: Khi bàn về công việc, dự án, tài chính, dữ liệu, quyết định thực tế.
+   - `act4_letter`: Khi trao thông điệp tổng kết, lời nhắn nhủ kim chỉ nam đắt giá.
+   - `daily1_waking_up`: Khi quẻ báo hiệu vận hội mới mở ra, khởi đầu mới, thời cơ thức tỉnh.
+   - `daily2_exercising`: Khi khuyên rèn luyện nội lực, mạnh dạn hành động, kiên trì vượt thử thách.
+   - `daily3_reading_leisure`: Khi khuyên bình tâm quan sát, trau dồi tri thức, chờ thời cơ chín muồi.
+   - `daily4_dancing`: Khi báo tin Đại Cát, hanh thông, tài lộc vượng, tình duyên tốt đẹp.
+   - `daily5_sleeping`: Khi khuyên án binh bất động, nghỉ ngơi dưỡng sức, tránh nóng vội.
+   - `daily6_drinking_tea`: Khi bàn về nhân duyên, đối tác, quý nhân tương trợ, hòa khí sinh tài.
+   - `daily7_cleaning`: Khi khuyên tháo gỡ nút thắt, buông bỏ rắc rối cũ, đề phòng tiểu nhân.
+   - `daily8_meditating`: Khi khuyên giữ tâm chính định (Trung Chính), tĩnh lặng soi chiếu nội tâm.
+
+BẮT BUỘC TRẢ VỀ JSON HỢP LỆ THEO CẤU TRÚC:
+{
+  "reply": "Câu trả lời trực tiếp của Tiểu Long Cửu Nhị dành cho người hỏi...",
+  "pose_id": "một trong 12 mã pose_id kể trên",
+  "hexagram_focus": "Tên quẻ hoặc hào trọng tâm đang luận (ngắn gọn)",
+  "quick_questions": [
+    "Câu hỏi gợi ý tiếp theo 1 sát với quẻ và vấn đề đang hỏi?",
+    "Câu hỏi gợi ý tiếp theo 2 về thời điểm hoặc cách hóa giải?",
+    "Câu hỏi gợi ý tiếp theo 3 về hành động cụ thể?"
+  ]
+}
+"""
+
+
+def dragon_agent_chat(
+    user_message: str,
+    main_question: str = "",
+    hexagram_text: str = "",
+    full_interpretation: str = "",
+    history: list[dict] = None,
+    api_key: str = None
+) -> dict:
+    """Interactive 3D Dragon AI Agent Q&A grounded in the active I Ching hexagram spread and user question."""
+    key = api_key or GEMINI_API_KEY
+    q_user = (user_message or "").strip() or "Xin Tiểu Long giải thích ý nghĩa cốt lõi của quẻ này đối với câu hỏi của tôi?"
+    q_main = (main_question or "").strip() or q_user
+
+    # Detect hexagram title from hexagram_text for fallback and focus display
+    clean_lines = [ln.strip() for ln in (hexagram_text or "").splitlines() if ln.strip()]
+    detected_hex = "Quẻ Kinh Dịch Hiện Tại"
+    for ln in clean_lines[:20]:
+        if any(w in ln.upper() for w in ["QUẺ", "LÁ 1", "BẢN QUÁI", "THÁP LA", "TRẬN"]):
+            detected_hex = re.sub(r"[\u4dc0-\u4dff#*✦☯•=\-\[\]【】]", " ", ln).strip()[:70]
+            if len(detected_hex) > 4:
+                break
+
+    history_text = ""
+    if history:
+        recent = history[-6:]
+        formatted_turns = []
+        for turn in recent:
+            role_label = "Người hỏi" if turn.get("role") == "user" else "Tiểu Long Cửu Nhị"
+            txt = (turn.get("text") or "").strip()
+            if txt:
+                formatted_turns.append(f"- {role_label}: {txt}")
+        if formatted_turns:
+            history_text = "\nLỊCH SỬ VẤN ĐÁP GẦN ĐÂY:\n" + "\n".join(formatted_turns) + "\n"
+
+    interp_excerpt = (full_interpretation or "").strip()[:2500]
+    hex_excerpt = (hexagram_text or "").strip()[:3500]
+
+    prompt = f"""CÂU HỎI GỐC CỦA ĐƯƠNG SỐ: "{q_main}"
+
+DỮ LIỆU QUẺ DỊCH & TRẢI BÀI TRÊN TRANG CHỦ:
+{hex_excerpt if hex_excerpt else "Đang gieo quẻ Kinh Dịch trên trang chủ."}
+
+{f"BÀI LUẬN THAM KHẢO ĐÃ CÓ:{chr(10)}{interp_excerpt}" if interp_excerpt else ""}
+{history_text}
+CÂU HỎI VẤN ĐÁP HIỆN TẠI NGƯỜI DÙNG VỪA HỎI TIỂU LONG:
+"{q_user}"
+
+Hãy trả lời trực diện, sâu sắc, ấm áp đúng vai Tiểu Long Cửu Nhị 3D trong điện thoại ở trang chủ và trả về JSON."""
+
+    response = None
+    if key:
+        try:
+            client = genai.Client(api_key=key)
+            for model_name in CANDIDATE_MODELS:
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config={
+                            "system_instruction": DRAGON_QA_SYSTEM_PROMPT,
+                            "response_mime_type": "application/json",
+                            "temperature": 0.65,
+                            "max_output_tokens": 2048,
+                        }
+                    )
+                    if response and response.text:
+                        break
+                except Exception as err:
+                    print(f"[DragonAgent] Model {model_name} busy: {str(err)[:80]}")
+                    continue
+        except Exception as e:
+            print(f"[DragonAgent] Client warning: {e}")
+
+    data = None
+    if response and response.text:
+        raw = response.text.strip()
+        if raw.startswith("```json"):
+            raw = raw[7:]
+        elif raw.startswith("```"):
+            raw = raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+        try:
+            data = json.loads(raw.strip())
+        except Exception:
+            data = {"reply": raw.strip()}
+
+    if not data or not data.get("reply"):
+        # Deterministic intelligent fallback grounded in hexagram_text and question
+        lower_q = q_user.lower()
+        if any(k in lower_q for k in ["thời điểm", "khi nào", "bao giờ", "tháng"]):
+            pose_id = "daily1_waking_up"
+            reply = (
+                f"Chào bạn! Tiểu Long vừa soi kỹ {detected_hex} cho câu hỏi “{q_user}”. "
+                f"Quẻ báo hiệu vận khí đang chuyển từ tĩnh sang động; giai đoạn thuận lợi nhất là khi bạn hoàn tất bước chuẩn bị nền tảng trong thời gian gần tới. "
+                f"Hãy tiến từng bước vững chắc, tránh đốt cháy giai đoạn thì cát khí sẽ tự khắc hội tụ!"
+            )
+        elif any(k in lower_q for k in ["tài lộc", "tiền", "kinh doanh", "đầu tư", "công việc"]):
+            pose_id = "act3_typing"
+            reply = (
+                f"Tiểu Long đã gõ máy Bát Quái đối chiếu {detected_hex} với trăn trở của bạn! "
+                f"Về phương diện công việc và tài chính, quẻ khuyên bạn lấy sự chắc chắn và uy tín làm gốc (Đắc Trung Chính). "
+                f"Hãy tập trung vào thế mạnh cốt lõi, kiểm soát kỹ dòng vốn và hợp tác cùng người đồng chí hướng để thu hoạch bền vững."
+            )
+        elif any(k in lower_q for k in ["tình cảm", "duyên", "yêu", "gia đạo", "đối tác"]):
+            pose_id = "daily6_drinking_tea"
+            reply = (
+                f"Mời bạn dùng chén trà thơm cùng Tiểu Long nhé! Chiếu theo {detected_hex}, "
+                f"nhân duyên và sự gắn kết cần nhất chữ Thành và sự lắng nghe ấm áp. "
+                f"Khi hai bên cởi mở tháo gỡ hiểu lầm bằng sự chân thành, mối quan hệ sẽ chuyển mình êm đẹp và bền chặt."
+            )
+        elif any(k in lower_q for k in ["tránh", "kỵ", "rủi ro", "cẩn thận", "hóa giải"]):
+            pose_id = "daily7_cleaning"
+            reply = (
+                f"Tiểu Long cầm chổi lông gà quét sạch mây mù để nhắc bạn điều này trong {detected_hex}: "
+                f"Điều cần tránh nhất lúc này là tâm lý nóng vội hoặc để cảm xúc nhất thời làm xao nhãng mục tiêu chính. "
+                f"Chỉ cần bạn giữ tâm tĩnh như mặt hồ, rà soát kỹ từng chi tiết nhỏ thì mọi chướng ngại đều hóa nhẹ tựa lông hồng!"
+            )
+        else:
+            pose_id = "act1_reading"
+            snippet = " ".join(clean_lines[:3])[:160] if clean_lines else detected_hex
+            reply = (
+                f"Tiểu Long Cửu Nhị đã lấy kính lúp soi tỏ trải bài ({snippet}) liên quan đến câu hỏi “{q_main}” của bạn! "
+                f"Thông điệp cốt lõi của quẻ là “Thuận Thời Đắc Vị”: hiện tại nội lực của bạn đang tích tụ tốt, hãy kiên định với định hướng đúng đắn, "
+                f"làm kỹ từng việc trước mắt và giữ tâm sáng suốt thì mưu sự ắt hanh thông."
+            )
+        data = {
+            "reply": reply,
+            "pose_id": pose_id,
+            "hexagram_focus": detected_hex,
+            "quick_questions": [
+                "Thời điểm nào tốt nhất để hành động theo quẻ này?",
+                "Điều đại kỵ cần tránh nhất trong quẻ này là gì?",
+                "Làm sao để kích hoạt cát khí & quý nhân của quẻ?"
+            ]
+        }
+
+    pose_id = data.get("pose_id") or "act1_reading"
+    if pose_id not in DRAGON_AGENT_POSES:
+        pose_id = "act1_reading"
+    pose_meta = DRAGON_AGENT_POSES[pose_id]
+
+    quick_qs = data.get("quick_questions")
+    if not isinstance(quick_qs, list) or len(quick_qs) == 0:
+        quick_qs = [
+            "Quẻ này khuyên tôi nên hành động ngay hay chờ thời?",
+            "Điểm cát tường lớn nhất trong trải bài này là gì?",
+            "Cần lưu ý điều gì để tránh rủi ro không đáng có?"
+        ]
+
+    return {
+        "reply": data["reply"],
+        "pose_id": pose_id,
+        "pose_img": pose_meta["img"],
+        "pose_video": pose_meta["video"],
+        "pose_badge": pose_meta["badge"],
+        "emotion": pose_meta["emotion"],
+        "hexagram_focus": data.get("hexagram_focus") or detected_hex,
+        "quick_questions": quick_qs[:4],
+    }
+

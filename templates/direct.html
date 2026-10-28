@@ -782,8 +782,12 @@
           </select>
         </div>
 
+        <button id="btn-wake-up-dragon" type="button" class="btn-launch" onclick="wakeUpDragonNow()" style="margin-bottom: 10px; background: linear-gradient(135deg, #FFF3B0 0%, #D4AF37 50%, #B8862D 100%); color: #1C1610; border: 2px solid #FFF8E7;">
+          <span>GỌI CỬU NHỊ TIỂU LONG DẬY</span>
+        </button>
+
         <button id="btn-submit" class="btn-launch" onclick="startAutomation()">
-          <span>🚀 BẮT ĐẦU TỰ ĐỘNG HÓA TOÀN BỘ</span>
+          <span id="btn-submit-label">🚀 BẮT ĐẦU TỰ ĐỘNG HÓA TOÀN BỘ</span>
         </button>
 
         <!-- Progress Box -->
@@ -1442,8 +1446,57 @@
         badge: '🌟 Full 2: Trọn Bộ 2 (40s)',
         title: '🌟 Full 2 · Trọn bộ hoạt ảnh Tiểu Long (Bản 2)...',
         desc: 'Trọn bộ hành trình: Mở Laptop Bát Quái → Soi cổ thư → Chép sớ → Gửi thư!'
+      },
+      8: {
+        src: '/videos/canh_thuc.mp4',
+        fileLabel: '🎬 Cảnh thức.mp4 (20s)',
+        badge: '🌅 Cảnh Thức: Tiểu Long Đang Thức Dậy',
+        title: '🌅 Cảnh Thức · Cửu Nhị Tiểu Long đang vươn vai thức giấc...',
+        desc: 'Đang chạy clip "Cảnh Thức" rồi chuyển sang "Cảnh Ngồi Không" · Đã mở khóa tính năng!'
+      },
+      9: {
+        src: '/videos/canh_ngoi_khong.mp4',
+        fileLabel: '🎬 cảnh ngồi không.mp4 (10s)',
+        badge: '🐉 Cảnh Ngồi Không: Tiểu Long Đã Thức',
+        title: '🐉 Cảnh Ngồi Không · Cửu Nhị Tiểu Long đang tĩnh tọa chờ lệnh...',
+        desc: 'Đã mở khóa Tự Động Hóa · Sẵn sàng phục vụ trong ngày!'
       }
     };
+
+    function getTodayDragonWakeKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
+    let dragonWakeState = (localStorage.getItem('cuunhi_dragon_awake_date_v1') === getTodayDragonWakeKey()) ? 'awake' : 'sleeping';
+
+    function syncDragonLockButtons() {
+      const isSleeping = (dragonWakeState === 'sleeping');
+      const wakeBtn = document.getElementById('btn-wake-up-dragon');
+      const submitBtn = document.getElementById('btn-submit');
+      const submitLabel = document.getElementById('btn-submit-label');
+      if (wakeBtn) {
+        wakeBtn.style.display = isSleeping ? 'flex' : 'none';
+      }
+      if (submitBtn) {
+        submitBtn.disabled = isSleeping || isPipelineRunning;
+      }
+      if (submitLabel) {
+        submitLabel.innerText = isSleeping
+          ? '🔒 BẮT ĐẦU TỰ ĐỘNG HÓA TOÀN BỘ (ĐANG KHÓA · HÃY GỌI TIỂU LONG DẬY)'
+          : '🚀 BẮT ĐẦU TỰ ĐỘNG HÓA TOÀN BỘ';
+      }
+    }
+
+    function wakeUpDragonNow() {
+      if (dragonWakeState !== 'sleeping') return;
+      try {
+        localStorage.setItem('cuunhi_dragon_awake_date_v1', getTodayDragonWakeKey());
+      } catch (e) {}
+      dragonWakeState = 'waking';
+      syncDragonLockButtons();
+      selectDragonAct(8, false);
+    }
 
     function selectDragonAct(act, manual = false) {
       if (manual) {
@@ -1476,18 +1529,24 @@
         if (!v.src.endsWith(meta.src)) {
           v.src = meta.src;
         }
-        v.loop = (act === 0);
+        v.loop = (act === 0 || act === 9);
         v.play().catch(() => {});
       }
     }
 
     function onDragonVideoEnded() {
       const v = document.getElementById('dragon-loop-video');
-      if (isPipelineRunning) {
+      if (dragonWakeState === 'waking' || currentDragonAct === 8) {
+        dragonWakeState = 'awake';
+        syncDragonLockButtons();
+        selectDragonAct(9, false);
+      } else if (isPipelineRunning) {
         const nextAct = (currentDragonAct === 6) ? 7 : 6;
         selectDragonAct(nextAct, false);
+      } else if (dragonWakeState === 'awake') {
+        selectDragonAct(9, false);
       } else if (currentDragonAct !== 0) {
-        selectDragonAct(0, false);
+        selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
       } else if (v) {
         v.currentTime = 0;
         v.play().catch(() => {});
@@ -1575,13 +1634,13 @@
           document.getElementById('btn-submit').disabled = false;
           document.getElementById('progress-percent').innerText = '100%';
           document.getElementById('bar-fill').style.width = '100%';
-          selectDragonAct(0, false);
+          selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
           showResult(data.result);
           notifyJobCompleted(data);
         } else if (data.status === 'error') {
           stopPolling();
           isPipelineRunning = false;
-          selectDragonAct(0, false);
+          selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
           document.title = ORIGINAL_DOC_TITLE;
           document.getElementById('btn-submit').disabled = false;
           document.getElementById('progress-message').innerHTML = `<span style="color: #FC8181;">⚠ ${data.error}</span>`;
@@ -1650,7 +1709,7 @@
       } else {
         player.style.display = 'none';
         placeholder.style.display = 'flex';
-        selectDragonAct(0, false);
+        selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
         if (toggleBtn) {
           toggleBtn.style.display = 'inline-block';
           toggleBtn.innerText = '🎬 Xem Video MP4';
@@ -1742,6 +1801,12 @@
 
     // Initialize config & check existing job on load
     async function initPage() {
+      syncDragonLockButtons();
+      if (dragonWakeState === 'awake') {
+        selectDragonAct(9, false);
+      } else {
+        selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
+      }
       await checkConfig();
       try {
         const res = await fetch('/api/direct/status');

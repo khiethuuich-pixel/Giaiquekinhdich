@@ -101,6 +101,17 @@ def cast_and_collect(layout: str = "random", headless: bool = True, log_cb=None)
             else:
                 log("Sử dụng trận pháp ngẫu nhiên theo web...")
 
+            # Nếu Cửu Nhị Tiểu Long đang ngủ (khóa nút Chép Cho AI), bấm nút Gọi Cửu Nhị Tiểu Long Dậy trước
+            try:
+                wake_btn = page.locator('#btn-wake-up-dragon, button:has-text("Gọi Cửu Nhị Tiểu Long Dậy")').first
+                if wake_btn.is_visible():
+                    log("Đang gọi Cửu Nhị Tiểu Long dậy để mở khóa nút Chép Cho AI...")
+                    wake_btn.scroll_into_view_if_needed()
+                    wake_btn.click()
+                    time.sleep(0.8)
+            except Exception:
+                pass
+
             # Click '⚡ Chép Toàn Bộ Quẻ Bài & Câu Hỏi Cho AI' trước khi mở modal chụp hình
             log("Đang trích xuất dữ liệu quẻ bằng nút 'Chép Cho AI'...")
             copy_btn = page.locator('button:has-text("Chép Toàn Bộ Quẻ Bài"), button:has-text("Sao Chép Cho AI"), button:has-text("Chép Cho AI")').first

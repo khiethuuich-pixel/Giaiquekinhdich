@@ -893,8 +893,12 @@
           </div>
         </div>
 
+        <button id="btn-wake-up-dragon" type="button" class="btn-launch" onclick="wakeUpDragonNow()" style="margin-bottom: 10px; background: linear-gradient(135deg, #FFF3B0 0%, #D4AF37 50%, #B8862D 100%); color: #1C1610; border: 2px solid #FFF8E7;">
+          <span>GỌI CỬU NHỊ TIỂU LONG DẬY</span>
+        </button>
+
         <button id="btn-submit" class="btn-launch" onclick="startAutomation(false)">
-          <span>🚀 BẮT ĐẦU TỰ ĐỘNG HÓA TOÀN BỘ (GHI ÂM HẾT PHÂN TÍCH)</span>
+          <span id="btn-submit-label">🚀 BẮT ĐẦU TỰ ĐỘNG HÓA TOÀN BỘ (GHI ÂM HẾT PHÂN TÍCH)</span>
         </button>
 
         <button id="btn-render-pasted" class="btn-secondary-launch" onclick="startAutomation(true)">
@@ -967,15 +971,14 @@
             box-shadow: 0 0 10px rgba(212, 175, 55, 0.45);
           }
         </style>
-        <div class="phone-mockup" style="background: radial-gradient(circle at 50% 25%, rgba(196, 150, 62, 0.22) 0%, #120E0A 68%, #080604 100%);">
-          <!-- Nút chuyển đổi Xem Rồng Nhỏ / Xem Video khi đã có video -->
+        <div class="phone-mockup" style="background: radial-gradient(circle at 50% 25%, rgba(196, 150, 62, 0.22) 0%, #120E0A 68%, #080604 100%); justify-content: space-between; padding: 10px;">
           <button id="btn-toggle-dragon-video" type="button" onclick="toggleDragonVideoView()" style="display: none; position: absolute; top: 14px; right: 16px; z-index: 30; background: rgba(20, 16, 12, 0.9); color: #F3E5AB; border: 1px solid #D4AF37; border-radius: 16px; padding: 4px 10px; font-size: 10.5px; font-weight: 700; cursor: pointer;">
             🐉 Xem Rồng Nhỏ
           </button>
 
-          <div id="phone-placeholder" class="phone-placeholder" style="width: 100%; height: 100%; padding: 18px 14px; display: flex; flex-direction: column; justify-content: space-between; align-items: center;">
-            <!-- Sân khấu Video Hoạt Ảnh Tiểu Long (Khi rảnh chạy Cảnh Ngủ 1 Liên Tiếp) -->
-            <div style="width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; position: relative; margin: 8px 0;">
+          <!-- CHẾ ĐỘ 2: Sân khấu Video Hoạt Ảnh Tiểu Long -->
+          <div id="phone-placeholder" class="phone-placeholder" style="width: 100%; flex: 1; padding: 10px 6px; display: flex; flex-direction: column; justify-content: space-between; align-items: center;">
+            <div style="width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; position: relative; margin: 4px 0;">
               <div style="width: 100%; height: 360px; border-radius: 16px; overflow: hidden; position: relative; border: 1.5px solid rgba(212,175,55,0.55); box-shadow: 0 10px 28px rgba(0,0,0,0.65); background: #0E0A07;">
                 <video
                   id="dragon-loop-video"
@@ -1000,7 +1003,7 @@
               </p>
             </div>
           </div>
-          <video id="video-player" controls playsinline style="display: none;"></video>
+          <video id="video-player" controls playsinline style="display: none; width: 100%; flex: 1; border-radius: 24px; margin-top: 6px;"></video>
         </div>
 
         <div id="download-bar" class="download-bar" style="display: none;">
@@ -1166,7 +1169,7 @@
       } finally {
         btnCrawl.disabled = false;
         isPipelineRunning = false;
-        selectDragonAct(0, false);
+        selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
       }
     }
 
@@ -1705,8 +1708,63 @@
         badge: '🌟 Full 2: Trọn Bộ 2 (40s)',
         title: '🌟 Full 2 · Trọn bộ hoạt ảnh Tiểu Long (Bản 2)...',
         desc: 'Trọn bộ hành trình: Mở Laptop Bát Quái → Soi cổ thư → Chép sớ → Gửi thư!'
+      },
+      8: {
+        src: '/videos/canh_thuc.mp4',
+        fileLabel: '🎬 Cảnh thức.mp4 (20s)',
+        badge: '🌅 Cảnh Thức: Tiểu Long Đang Thức Dậy',
+        title: '🌅 Cảnh Thức · Cửu Nhị Tiểu Long đang vươn vai thức giấc...',
+        desc: 'Đang chạy clip "Cảnh Thức" rồi chuyển sang "Cảnh Ngồi Không" · Đã mở khóa tính năng!'
+      },
+      9: {
+        src: '/videos/canh_ngoi_khong.mp4',
+        fileLabel: '🎬 cảnh ngồi không.mp4 (10s)',
+        badge: '🐉 Cảnh Ngồi Không: Tiểu Long Đã Thức',
+        title: '🐉 Cảnh Ngồi Không · Cửu Nhị Tiểu Long đang tĩnh tọa chờ lệnh...',
+        desc: 'Đã mở khóa Chép Cho AI & Tự Động Hóa · Sẵn sàng phục vụ trong ngày!'
       }
     };
+
+    function getTodayDragonWakeKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
+    let dragonWakeState = (localStorage.getItem('cuunhi_dragon_awake_date_v1') === getTodayDragonWakeKey()) ? 'awake' : 'sleeping';
+
+    function syncDragonLockButtons() {
+      const isSleeping = (dragonWakeState === 'sleeping');
+      const wakeBtn = document.getElementById('btn-wake-up-dragon');
+      const crawlBtn = document.getElementById('btn-crawl-only');
+      const submitBtn = document.getElementById('btn-submit');
+      const submitLabel = document.getElementById('btn-submit-label');
+      if (wakeBtn) {
+        wakeBtn.style.display = isSleeping ? 'flex' : 'none';
+      }
+      if (crawlBtn) {
+        crawlBtn.disabled = isSleeping || isPipelineRunning;
+        crawlBtn.innerHTML = isSleeping ? '🔒 1. Bốc Quẻ & Chép Cho AI (Đang Khóa)' : '⚡ 1. Bốc Quẻ & Chép Cho AI';
+      }
+      if (submitBtn) {
+        submitBtn.disabled = isSleeping || isPipelineRunning;
+      }
+      if (submitLabel) {
+        submitLabel.innerText = isSleeping
+          ? '🔒 BẮT ĐẦU TỰ ĐỘNG HÓA TOÀN BỘ (ĐANG KHÓA · HÃY GỌI TIỂU LONG DẬY)'
+          : '🚀 BẮT ĐẦU TỰ ĐỘNG HÓA TOÀN BỘ (GHI ÂM HẾT PHÂN TÍCH)';
+      }
+    }
+
+    function wakeUpDragonNow() {
+      if (dragonWakeState !== 'sleeping') return;
+      try {
+        localStorage.setItem('cuunhi_dragon_awake_date_v1', getTodayDragonWakeKey());
+      } catch (e) {}
+      dragonWakeState = 'waking';
+      syncDragonLockButtons();
+      switchPhoneMode('motion');
+      selectDragonAct(8, false);
+    }
 
     function selectDragonAct(act, manual = false) {
       if (manual) {
@@ -1739,18 +1797,24 @@
         if (!v.src.endsWith(meta.src)) {
           v.src = meta.src;
         }
-        v.loop = (act === 0);
+        v.loop = (act === 0 || act === 9);
         v.play().catch(() => {});
       }
     }
 
     function onDragonVideoEnded() {
       const v = document.getElementById('dragon-loop-video');
-      if (isPipelineRunning) {
+      if (dragonWakeState === 'waking' || currentDragonAct === 8) {
+        dragonWakeState = 'awake';
+        syncDragonLockButtons();
+        selectDragonAct(9, false);
+      } else if (isPipelineRunning) {
         const nextAct = (currentDragonAct === 6) ? 7 : 6;
         selectDragonAct(nextAct, false);
+      } else if (dragonWakeState === 'awake') {
+        selectDragonAct(9, false);
       } else if (currentDragonAct !== 0) {
-        selectDragonAct(0, false);
+        selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
       } else if (v) {
         v.currentTime = 0;
         v.play().catch(() => {});
@@ -1770,20 +1834,168 @@
       }
     }
 
+    let dfAgentHistory = [];
+    let dfAgentAudio = null;
+
+    function switchPhoneMode(mode) {
+      const panel3d = document.getElementById('phone-agent3d-panel');
+      const placeholder = document.getElementById('phone-placeholder');
+      const player = document.getElementById('video-player');
+      const btn3d = document.getElementById('btn-tab-3d-agent');
+      const btnMotion = document.getElementById('btn-tab-motion');
+
+      if (player) {
+        player.pause();
+        player.style.display = 'none';
+      }
+      if (mode === 'agent3d') {
+        if (panel3d) panel3d.style.display = 'flex';
+        if (placeholder) placeholder.style.display = 'none';
+        if (btn3d) {
+          btn3d.style.background = 'linear-gradient(135deg, #F5E3A9, #D4AF37)';
+          btn3d.style.color = '#1A130C';
+        }
+        if (btnMotion) {
+          btnMotion.style.background = 'transparent';
+          btnMotion.style.color = '#C4A66A';
+        }
+      } else {
+        if (panel3d) panel3d.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'flex';
+        if (btnMotion) {
+          btnMotion.style.background = 'linear-gradient(135deg, #F5E3A9, #D4AF37)';
+          btnMotion.style.color = '#1A130C';
+        }
+        if (btn3d) {
+          btn3d.style.background = 'transparent';
+          btn3d.style.color = '#C4A66A';
+        }
+      }
+    }
+
+    function onDf3DMove(ev) {
+      const stage = document.getElementById('df-3d-stage');
+      const card = document.getElementById('df-3d-card');
+      if (!stage || !card) return;
+      const r = stage.getBoundingClientRect();
+      const x = (ev.clientX - r.left) / Math.max(1, r.width);
+      const y = (ev.clientY - r.top) / Math.max(1, r.height);
+      const ry = (x - 0.5) * 26;
+      const rx = (0.5 - y) * 22;
+      card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) scale(1.03)`;
+    }
+
+    function onDf3DLeave() {
+      const card = document.getElementById('df-3d-card');
+      if (card) card.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+    }
+
+    function setDf3DPose(poseId, imgUrl, badgeText, btnEl) {
+      const img = document.getElementById('df-3d-img');
+      const badge = document.getElementById('df-3d-pose-badge');
+      if (img && imgUrl) img.src = imgUrl;
+      if (badge && badgeText) badge.innerText = badgeText;
+      if (btnEl) {
+        document.querySelectorAll('#df-12-poses-bar .dragon-stage-btn').forEach(b => b.classList.remove('active'));
+        btnEl.classList.add('active');
+      }
+    }
+
+    async function askDfDragonAgent(customQ) {
+      const inputEl = document.getElementById('df-agent-input');
+      const chatList = document.getElementById('df-agent-chat-list');
+      const mainQ = (document.getElementById('question') && document.getElementById('question').value.trim()) || '';
+      const q = (customQ || (inputEl ? inputEl.value.trim() : '') || mainQ || 'Xin Tiểu Long giải đáp ý nghĩa quẻ này?').trim();
+      if (!q || !chatList) return;
+      if (!customQ && inputEl) inputEl.value = '';
+
+      const userDiv = document.createElement('div');
+      userDiv.style.cssText = 'align-self: flex-end; max-width: 90%; background: linear-gradient(135deg, #8B1E22, #6E1418); color: #FFF8E7; border: 1px solid rgba(212,175,55,0.45); border-radius: 10px; padding: 6px 9px; font-size: 10.5px; line-height: 1.45;';
+      userDiv.innerText = q;
+      chatList.appendChild(userDiv);
+
+      const loadDiv = document.createElement('div');
+      loadDiv.style.cssText = 'align-self: flex-start; color: #E5C158; font-size: 10px; font-style: italic; padding: 4px 6px;';
+      loadDiv.innerText = '🔮 Tiểu Long 3D đang soi quẻ giải đáp...';
+      chatList.appendChild(loadDiv);
+      chatList.scrollTop = chatList.scrollHeight;
+
+      setDf3DPose('act1_reading', '/images/dragon/act1_reading.jpg', '🔍 Đang Soi Quẻ & Hào Từ...');
+
+      try {
+        const res = await fetch('/api/dragon_agent/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_message: q,
+            main_question: mainQ || q,
+            hexagram_text: lastCrawledHexagramText || '',
+            full_interpretation: currentInterpretationText || (document.getElementById('custom-analysis') ? document.getElementById('custom-analysis').value : ''),
+            history: dfAgentHistory.slice(-6),
+            with_voice: true,
+            voice: (document.getElementById('voice') && document.getElementById('voice').value) || 'vi-VN-NamMinhNeural'
+          })
+        });
+        const data = await res.json();
+        loadDiv.remove();
+
+        const reply = data.reply || 'Tiểu Long đã soi kỹ quẻ: Hãy giữ tâm chính định, thuận thời hành sự ắt đạt cát tường!';
+        if (data.pose_img) {
+          setDf3DPose(data.pose_id, data.pose_img, data.pose_badge || '🐉 Tiểu Long Cửu Nhị 3D');
+        }
+
+        const agentDiv = document.createElement('div');
+        agentDiv.style.cssText = 'align-self: flex-start; max-width: 94%; background: #221A12; border: 1px solid rgba(212,175,55,0.45); border-radius: 10px; padding: 7px 9px; font-size: 10.5px; line-height: 1.45; color: #F5E6C4;';
+        agentDiv.innerHTML = `<div style="font-size: 9px; font-weight: 700; color: #E5C158; margin-bottom: 3px;">🐉 Tiểu Long Cửu Nhị · ${data.pose_badge || '3D AI'}</div><div>${reply.replace(/\n/g, '<br/>')}</div>`;
+        chatList.appendChild(agentDiv);
+        chatList.scrollTop = chatList.scrollHeight;
+
+        dfAgentHistory.push({ role: 'user', text: q }, { role: 'agent', text: reply });
+
+        if (Array.isArray(data.quick_questions) && data.quick_questions.length > 0) {
+          const chipsWrap = document.getElementById('df-agent-quick-chips');
+          if (chipsWrap) {
+            chipsWrap.innerHTML = '';
+            data.quick_questions.slice(0, 3).forEach(qq => {
+              const b = document.createElement('button');
+              b.type = 'button';
+              b.className = 'dragon-stage-btn';
+              b.style.whiteSpace = 'nowrap';
+              b.innerText = qq;
+              b.onclick = () => askDfDragonAgent(qq);
+              chipsWrap.appendChild(b);
+            });
+          }
+        }
+
+        if (data.audio_url) {
+          try {
+            if (dfAgentAudio) dfAgentAudio.pause();
+            dfAgentAudio = new Audio(data.audio_url);
+            dfAgentAudio.play().catch(() => {});
+          } catch (e) {}
+        }
+      } catch (e) {
+        loadDiv.innerText = '⚠ Lỗi kết nối Tiểu Long 3D.';
+      }
+    }
+
     function toggleDragonVideoView() {
+      const panel3d = document.getElementById('phone-agent3d-panel');
       const placeholder = document.getElementById('phone-placeholder');
       const player = document.getElementById('video-player');
       const toggleBtn = document.getElementById('btn-toggle-dragon-video');
-      if (!placeholder || !player) return;
+      if (!player) return;
       if (player.style.display === 'none') {
-        placeholder.style.display = 'none';
+        if (panel3d) panel3d.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'none';
         player.style.display = 'block';
-        if (toggleBtn) toggleBtn.innerText = '🐉 Xem Rồng Nhỏ';
+        if (toggleBtn) toggleBtn.innerText = '🐉 Về 3D Agent';
       } else {
         player.pause();
         player.style.display = 'none';
-        placeholder.style.display = 'flex';
-        if (toggleBtn) toggleBtn.innerText = '🎬 Xem Video MP4';
+        if (panel3d) panel3d.style.display = 'flex';
+        if (toggleBtn) toggleBtn.innerText = '📱 Video 9:16';
       }
     }
 
@@ -1844,13 +2056,13 @@
           document.getElementById('btn-render-pasted').disabled = false;
           document.getElementById('progress-percent').innerText = '100%';
           document.getElementById('bar-fill').style.width = '100%';
-          selectDragonAct(0, false);
+          selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
           showResult(data.result);
           notifyJobCompleted(data);
         } else if (data.status === 'error') {
           stopPolling();
           isPipelineRunning = false;
-          selectDragonAct(0, false);
+          selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
           document.title = ORIGINAL_DOC_TITLE;
           document.getElementById('btn-submit').disabled = false;
           document.getElementById('btn-render-pasted').disabled = false;
@@ -1915,7 +2127,7 @@
       } else {
         player.style.display = 'none';
         placeholder.style.display = 'flex';
-        selectDragonAct(0, false);
+        selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
         if (toggleBtn) {
           toggleBtn.style.display = 'inline-block';
           toggleBtn.innerText = '🎬 Xem Video MP4';
@@ -2012,6 +2224,12 @@
     }
 
     async function initPage() {
+      syncDragonLockButtons();
+      if (dragonWakeState === 'awake') {
+        selectDragonAct(9, false);
+      } else {
+        selectDragonAct(dragonWakeState === 'awake' ? 9 : 0, false);
+      }
       await checkConfig();
       try {
         const res = await fetch('/api/direct_full/status');
