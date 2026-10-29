@@ -29,12 +29,13 @@ def format_ass_time(seconds: float) -> str:
     return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
 
 def sanitize_script_for_tts(text: str) -> str:
-    """Sanitize video script for clean, concise TTS narration."""
+    """Sanitize video script for clean, concise TTS narration (100% Vietnamese, zero Chinese characters)."""
     if not text:
         return ""
     t = text
-    # Strip I Ching hexagram Unicode symbols (䷀..䷿) and decorative icons
-    t = re.sub(r'[\u4dc0-\u4dff✦⚠☯🃏•▪►◆◇★☆✓✕⚡🎙🎬📖📋🔮]', ' ', t)
+    # Strip all Chinese / CJK characters (Hanzi) and I Ching hexagram Unicode symbols (䷀..䷿) and decorative icons
+    t = re.sub(r'[\u2e80-\u2eff\u3000-\u303f\u3400-\u4dbf\u4dc0-\u4dff\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef✦⚠☯🃏•▪►◆◇★☆✓✕⚡🎙🎬📖📋🔮]+', ' ', t)
+    t = re.sub(r'\(\s*[-·•,;:]?\s*\)', ' ', t)
     # Strip any accidental PHẦN 1/2/3/4 section header lines
     t = re.sub(r'(?:^|\n)\s*[#*✦☯\-\s]*PHẦN\s*[1-4][^\n.]*[.:\n]?', ' ', t, flags=re.IGNORECASE)
     t = re.sub(r'[*_#`~>]', '', t)
@@ -52,11 +53,12 @@ def sanitize_script_for_tts(text: str) -> str:
 def sanitize_full_analysis_for_tts(text: str) -> str:
     """
     Sanitize full analysis text for TTS narration, removing section headers (PHẦN 1..4),
-    hexagram Unicode symbols (䷀..䷿), and formatting markers so spoken audio is clean and natural.
+    Chinese characters (Hanzi), hexagram Unicode symbols (䷀..䷿), and formatting markers.
     """
     if not text:
         return ""
-    t = re.sub(r'[\u4dc0-\u4dff✦⚠☯🃏•▪►◆◇★☆✓✕⚡🎙🎬📖📋🔮]', ' ', text)
+    t = re.sub(r'[\u2e80-\u2eff\u3000-\u303f\u3400-\u4dbf\u4dc0-\u4dff\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef✦⚠☯🃏•▪►◆◇★☆✓✕⚡🎙🎬📖📋🔮]+', ' ', text)
+    t = re.sub(r'\(\s*[-·•,;:]?\s*\)', ' ', t)
     t = re.sub(r'(?:^|\n)\s*[#*✦☯\-\s]*PHẦN\s*[1-4][^\n]*', ' ', t, flags=re.IGNORECASE)
     t = re.sub(r'[-=_]{3,}', '. ', t)
     t = re.sub(r'[*_#`~>]', '', t)
@@ -302,6 +304,7 @@ def split_analysis_into_card_sections(raw_text: str, num_cards: int) -> dict:
 def apply_voice_filter(input_mp3: Path, output_mp3: Path, persona: str) -> Path:
     """Apply FFmpeg audio DSP filter for voice personas."""
     filters = {
+        "nam_tram_am": "highpass=f=75,bass=g=2.8:f=145:w=0.6,acompressor=threshold=-18dB:ratio=2.4:attack=15:release=180",
         "elder": "asetrate=24000*0.96,atempo=0.94,bass=g=3:f=150",
         "zen": "atempo=0.93,treble=g=1.5:f=3000",
     }
@@ -357,6 +360,7 @@ def _split_text_into_chunks(text: str, max_chars: int = 1600) -> list[str]:
 
 _VOXCPM_SPACE_CLIENT = None
 _VOXCPM_CONTROLS = {
+    "voxcpm-nam-tram-am": ("male", "Deep, warm, calm Vietnamese male narrator, resonant baritone voice, steady philosophical I Ching reading pace"),
     "voxcpm-namminh": ("male", "Deep, calm, resonant Vietnamese male narrator voice, authoritative and philosophical, clear articulation"),
     "voxcpm-hoaimy": ("female", "Vietnamese female narrator, gentle, clear, warm and expressive voice, natural storytelling pace"),
     "voxcpm-elder": ("male", "Wise elderly Vietnamese I Ching master, deep resonant baritone voice, slow, solemn, authoritative tone"),
@@ -406,10 +410,12 @@ def _synth_voxcpm_to_mp3(chunk_text: str, vox_voice: str, out_chunk_mp3: Path) -
         return False
 
 async def _synth_single_chunk(chunk_text: str, actual_voice: str, out_chunk_mp3: Path):
-    """Synthesize a single text chunk to MP3 using pure Vietnamese Edge-TTS primary and gTTS (vi) fallback."""
+    """Synthesize a single text chunk to MP3 using VoxCPM2 / warm-deep Edge-TTS primary and gTTS (vi) fallback."""
     out_chunk_mp3 = Path(out_chunk_mp3)
     success = False
-    if str(actual_voice).lower().startswith("voxcpm"):
+    is_vox = str(actual_voice).lower().startswith("voxcpm")
+    if is_vox:
+        success = await asyncio.to_thread(_synth_voxcpm_to_mp3, chunk_text, str(actual_voice).lower(), out_chunk_mp3)
         if "hoaimy" in actual_voice.lower() or "female" in actual_voice.lower():
             actual_voice = "vi-VN-HoaiMyNeural"
         else:
@@ -426,14 +432,18 @@ async def _synth_single_chunk(chunk_text: str, actual_voice: str, out_chunk_mp3:
             print(f"[VoiceEngine] gTTS lỗi: {eg}")
 
     if not success:
+        is_male = "namminh" in actual_voice.lower()
+        tts_rate = "-4%" if is_male else "+0%"
+        tts_pitch = "-6Hz" if is_male else "+0Hz"
+        tts_vol = "+6%" if is_male else "+0%"
         for attempt in range(1, 4):
             try:
                 communicate = edge_tts.Communicate(
                     chunk_text,
                     voice=actual_voice,
-                    rate="+0%",
-                    volume="+0%",
-                    pitch="+0Hz"
+                    rate=tts_rate,
+                    volume=tts_vol,
+                    pitch=tts_pitch
                 )
                 await communicate.save(str(out_chunk_mp3))
                 if out_chunk_mp3.exists() and out_chunk_mp3.stat().st_size > 800:
@@ -458,12 +468,10 @@ def _resolve_persona_and_voice(voice: str):
     persona = "standard"
     actual_voice = voice or DEFAULT_VOICE
     low = actual_voice.lower()
+    if low == "nam_tram_am":
+        return "nam_tram_am", "vi-VN-NamMinhNeural"
     if low.startswith("voxcpm"):
-        if "elder" in low:
-            return "elder", "vi-VN-NamMinhNeural"
-        if "hoaimy" in low or "female" in low:
-            return "standard", "vi-VN-HoaiMyNeural"
-        return "standard", "vi-VN-NamMinhNeural"
+        return "nam_tram_am", low
     if "Elder" in actual_voice or actual_voice == "namminh_elder":
         persona = "elder"
         actual_voice = "vi-VN-NamMinhNeural"
@@ -473,6 +481,7 @@ def _resolve_persona_and_voice(voice: str):
     elif "HoaiMy" in actual_voice or actual_voice == "hoaimy_solo":
         actual_voice = "vi-VN-HoaiMyNeural"
     elif "NamMinh" in actual_voice or actual_voice == "namminh_solo":
+        persona = "nam_tram_am"
         actual_voice = "vi-VN-NamMinhNeural"
     elif "gtts" in actual_voice:
         actual_voice = "gtts"
