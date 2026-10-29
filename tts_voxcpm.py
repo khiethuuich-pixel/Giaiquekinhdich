@@ -130,6 +130,153 @@ def resolve_control(L, default_control, default_voice):
     return ctrl
 
 
+_VI_DIGITS = ["không", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"]
+_VI_DIACRITIC_RE = re.compile(
+    r"[ăâđêôơưáàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]",
+    re.IGNORECASE,
+)
+
+
+def _read_three_digits_vi(num: int, show_zero_hundred: bool) -> str:
+    h = num // 100
+    rem = num % 100
+    t = rem // 10
+    u = rem % 10
+    parts = []
+    if h > 0 or show_zero_hundred:
+        parts.append(f"{_VI_DIGITS[h]} trăm")
+    if t == 0 and u > 0:
+        if h > 0 or show_zero_hundred:
+            parts.extend(["linh", _VI_DIGITS[u]])
+        else:
+            parts.append(_VI_DIGITS[u])
+    elif t == 1:
+        parts.append("mười")
+        if u == 5:
+            parts.append("lăm")
+        elif u > 0:
+            parts.append(_VI_DIGITS[u])
+    elif t > 1:
+        parts.append(f"{_VI_DIGITS[t]} mươi")
+        if u == 1:
+            parts.append("mốt")
+        elif u == 4:
+            parts.append("bốn")
+        elif u == 5:
+            parts.append("lăm")
+        elif u > 0:
+            parts.append(_VI_DIGITS[u])
+    return " ".join(parts)
+
+
+def number_to_vietnamese_words(n: int) -> str:
+    if n < 0:
+        return ""
+    if n == 0:
+        return "không"
+    if n >= 1_000_000_000_000:
+        return " ".join(_VI_DIGITS[int(d)] for d in str(n))
+    units = ["", "nghìn", "triệu", "tỷ"]
+    groups = []
+    temp = n
+    while temp > 0:
+        groups.append(temp % 1000)
+        temp //= 1000
+    parts = []
+    for i in range(len(groups) - 1, -1, -1):
+        grp = groups[i]
+        if grp == 0:
+            continue
+        show_zero_hundred = i < len(groups) - 1
+        grp_words = _read_three_digits_vi(grp, show_zero_hundred)
+        unit_label = units[i] if i < len(units) else ""
+        parts.append(f"{grp_words} {unit_label}".strip())
+    return " ".join(parts)
+
+
+def convert_numbers_to_vietnamese_words(raw: str) -> str:
+    """Convert all Arabic digits (0-9) in Vietnamese text into Vietnamese spoken words so TTS never reads numbers in English."""
+    if not raw:
+        return ""
+    s = str(raw)
+    s = re.sub(
+        r"\bLá\s*(?:bài\s*)?(?:số\s*)?(\d+)\b",
+        lambda m: f"Lá bài số {number_to_vietnamese_words(int(m.group(1)))}",
+        s,
+        flags=re.IGNORECASE,
+    )
+    s = re.sub(
+        r"\bHào\s*Động\s*(?:thứ\s*|số\s*)?(\d+)\b",
+        lambda m: "Hào động thứ nhất"
+        if int(m.group(1)) == 1
+        else ("Hào động thứ tư" if int(m.group(1)) == 4 else f"Hào động thứ {number_to_vietnamese_words(int(m.group(1)))}"),
+        s,
+        flags=re.IGNORECASE,
+    )
+    s = re.sub(
+        r"\bHào\s*(?:số\s*)?(\d+)\b",
+        lambda m: f"Hào số {number_to_vietnamese_words(int(m.group(1)))}",
+        s,
+        flags=re.IGNORECASE,
+    )
+    s = re.sub(
+        r"\bQuẻ\s*(?:số\s*)?#?(\d+)\b",
+        lambda m: f"Quẻ số {number_to_vietnamese_words(int(m.group(1)))}",
+        s,
+        flags=re.IGNORECASE,
+    )
+    s = re.sub(r"\b(thứ|Thứ)\s+1\b", r"\1 nhất", s)
+    s = re.sub(r"\b(thứ|Thứ)\s+4\b", r"\1 tư", s)
+    s = re.sub(
+        r"\b(thứ|Thứ)\s+(\d+)\b",
+        lambda m: f"{m.group(1)} {number_to_vietnamese_words(int(m.group(2)))}",
+        s,
+    )
+    s = re.sub(
+        r"(?:^|(?<=[.!?;\n]))\s*(\d+)\.\s+",
+        lambda m: f" {number_to_vietnamese_words(int(m.group(1)))}, ",
+        s,
+    )
+    s = re.sub(
+        r"\s+(\d+)\.\s+(?=[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ])",
+        lambda m: f". {number_to_vietnamese_words(int(m.group(1)))}, ",
+        s,
+    )
+    s = re.sub(
+        r"(\d+)[.,](\d+)\s*%",
+        lambda m: f"{number_to_vietnamese_words(int(m.group(1)))} phẩy {number_to_vietnamese_words(int(m.group(2)))} phần trăm",
+        s,
+    )
+    s = re.sub(
+        r"(\d+)\s*%",
+        lambda m: f"{number_to_vietnamese_words(int(m.group(1)))} phần trăm",
+        s,
+    )
+    s = re.sub(
+        r"\b(\d+)\s*/\s*(\d+)\b",
+        lambda m: f"{number_to_vietnamese_words(int(m.group(1)))} trên {number_to_vietnamese_words(int(m.group(2)))}",
+        s,
+    )
+    s = re.sub(
+        r"\b(\d+)\s*[-–—]\s*(\d+)\b",
+        lambda m: f"{number_to_vietnamese_words(int(m.group(1)))} đến {number_to_vietnamese_words(int(m.group(2)))}",
+        s,
+    )
+    s = re.sub(
+        r"\b(\d+)[.,](\d+)\b",
+        lambda m: f"{number_to_vietnamese_words(int(m.group(1)))} phẩy {number_to_vietnamese_words(int(m.group(2)))}",
+        s,
+    )
+    s = re.sub(
+        r"\d+",
+        lambda m: f" {number_to_vietnamese_words(int(m.group(0)))} ",
+        s,
+    )
+    s = re.sub(r"\s+([,.;:!?])", r"\1", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
 def decode_to_wav(audio_bytes_or_path, target_sr=DEFAULT_SR):
     """Decode any audio file or bytes (mp3/wav/flac) to mono float32 at target_sr using ffmpeg."""
     cmd = ["ffmpeg", "-y", "-loglevel", "error"]
@@ -228,6 +375,10 @@ class SpaceClient:
         use_prompt_text = bool(ref_wav and prompt_text and prompt_text.strip())
         actual_prompt_text = prompt_text.strip() if use_prompt_text else ""
         actual_control = "" if use_prompt_text else (control or "")
+
+        if _VI_DIACRITIC_RE.search(str(text)) or "vietnamese" in actual_control.lower():
+            text = convert_numbers_to_vietnamese_words(str(text))
+            normalize = False
 
         payload = {
             "data": [
@@ -409,6 +560,9 @@ def synthesize_one(
     normalize,
     denoise,
 ):
+    if _VI_DIACRITIC_RE.search(str(text)) or "vietnamese" in str(control or "").lower():
+        text = convert_numbers_to_vietnamese_words(str(text))
+        normalize = False
     last_err = None
     for attempt in range(3):
         try:

@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 import edge_tts
 from config import AUDIO_DIR, DEFAULT_VOICE
+from tts_voxcpm import convert_numbers_to_vietnamese_words
 
 def get_audio_duration(audio_path: str) -> float:
     """Get exact duration of audio file in seconds using ffprobe."""
@@ -47,6 +48,7 @@ def sanitize_script_for_tts(text: str) -> str:
     t = re.sub(r'\s*,\s*,\s*', ', ', t)
     t = re.sub(r'\s*,\s*\.', '.', t)
     t = re.sub(r'\.{2,}', '.', t)
+    t = convert_numbers_to_vietnamese_words(t)
     t = re.sub(r'\s+', ' ', t).strip()
     return t
 
@@ -84,6 +86,7 @@ def sanitize_full_analysis_for_tts(text: str) -> str:
     full_text = re.sub(r'\s*,\s*\.', '.', full_text)
     full_text = re.sub(r'\.{2,}', '.', full_text)
     full_text = re.sub(r'^\s*,\s*', '', full_text)
+    full_text = convert_numbers_to_vietnamese_words(full_text)
     full_text = re.sub(r'\s+', ' ', full_text).strip()
     return full_text
 
@@ -413,6 +416,7 @@ def _synth_voxcpm_to_mp3(chunk_text: str, vox_voice: str, out_chunk_mp3: Path) -
 
 async def _synth_single_chunk(chunk_text: str, actual_voice: str, out_chunk_mp3: Path):
     """Synthesize a single text chunk to MP3 using VoxCPM2 / warm-deep Edge-TTS primary and gTTS (vi) fallback."""
+    chunk_text = convert_numbers_to_vietnamese_words(chunk_text)
     out_chunk_mp3 = Path(out_chunk_mp3)
     success = False
     is_vox = str(actual_voice).lower().startswith("voxcpm") or str(actual_voice).lower() in ("test_vi_design", "nam_tram_am")
