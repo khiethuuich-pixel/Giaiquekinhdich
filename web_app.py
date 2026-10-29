@@ -246,6 +246,12 @@ class DragonAgentChatRequest(BaseModel):
     voice: str = DEFAULT_VOICE
     api_key: str = ""
 
+class InkWashInterpretRequest(BaseModel):
+    question: str = ""
+    hexagram_text: str = ""
+    num_cards: int = 4
+    api_key: str = ""
+
 # ==========================================
 # HTML ROUTING
 # ==========================================
@@ -716,6 +722,59 @@ async def api_direct_home_run(req: DirectHomeRequest, background_tasks: Backgrou
         "saved_image_url": f"/media/images/{Path(saved_image_path).name}" if saved_image_path else "",
         "message": f"Đã chụp xong thẻ bài! Tiến trình đang chạy ngầm (Dự kiến hoàn tất trong {format_eta_vi(est_eta)})..."
     }
+
+@app.post("/api/ink_wash/ai_interpret")
+async def api_ink_wash_ai_interpret(req: InkWashInterpretRequest):
+    """
+    Nhận văn bản 'Chép Toàn Bộ Cho AI' từ trang chủ / Tháp La, đưa vào AI Gemini giải quẻ toàn diện,
+    sau đó tóm tắt giữ trọn ý chính cho từng lá bài (1..N) và kết luận để đưa về đọc đầy đủ trong Xưởng Phim Thủy Mặc.
+    """
+    import asyncio
+    from gemini_sage import analyze_and_script
+    from voice_engine import condense_analysis_to_concise_script, split_analysis_into_card_sections, sanitize_script_for_tts
+
+    try:
+        q = (req.question or "").strip() or "Xin chỉ điểm vận trình và lời khuyên hành động tối ưu?"
+        n_cards = max(1, int(req.num_cards or 4))
+        gemini_data = await asyncio.to_thread(
+            analyze_and_script,
+            question=q,
+            hexagram_data=req.hexagram_text,
+            api_key=req.api_key or None,
+            num_cards=n_cards
+        )
+        full_interp = (gemini_data.get("full_interpretation") or "").strip()
+        raw_script = (gemini_data.get("video_script") or "").strip()
+        hook = (gemini_data.get("hook") or "").strip()
+        summary_advice = (gemini_data.get("summary_advice") or "").strip()
+        hex_title = (gemini_data.get("hexagram_title") or "QUẺ KINH DỊCH CỬU NHỊ").strip()
+
+        concise_script = condense_analysis_to_concise_script(
+            raw_script or full_interp,
+            question=q,
+            num_cards=n_cards
+        )
+        parsed_sections = split_analysis_into_card_sections(concise_script, n_cards)
+        card_summaries = []
+        if parsed_sections.get("matched") and parsed_sections.get("cards"):
+            for c_txt in parsed_sections["cards"]:
+                card_summaries.append(sanitize_script_for_tts(c_txt))
+
+        return {
+            "success": True,
+            "hexagram_title": hex_title,
+            "hook": hook,
+            "summary_advice": summary_advice,
+            "full_interpretation": full_interp,
+            "concise_script": concise_script,
+            "card_summaries": card_summaries,
+            "outro_summary": sanitize_script_for_tts(parsed_sections.get("outro") or summary_advice),
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
 
 # ==========================================
 # 1D. APIS DÀNH CHO 3D AI AGENT TIỂU LONG CỬU NHỊ (VẤN ĐÁP QUẺ DỊCH TRONG ĐIỆN THOẠI Ở TRANG CHỦ)

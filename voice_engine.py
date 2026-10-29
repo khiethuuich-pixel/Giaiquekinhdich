@@ -406,18 +406,14 @@ def _synth_voxcpm_to_mp3(chunk_text: str, vox_voice: str, out_chunk_mp3: Path) -
         return False
 
 async def _synth_single_chunk(chunk_text: str, actual_voice: str, out_chunk_mp3: Path):
-    """Synthesize a single text chunk to MP3 with OpenBMB VoxCPM2 primary, Edge-TTS and gTTS fallback."""
+    """Synthesize a single text chunk to MP3 using pure Vietnamese Edge-TTS primary and gTTS (vi) fallback."""
     out_chunk_mp3 = Path(out_chunk_mp3)
     success = False
-    edge_fallback_voice = "vi-VN-NamMinhNeural"
-    if str(actual_voice).startswith("voxcpm"):
+    if str(actual_voice).lower().startswith("voxcpm"):
         if "hoaimy" in actual_voice.lower() or "female" in actual_voice.lower():
-            edge_fallback_voice = "vi-VN-HoaiMyNeural"
-        loop = asyncio.get_running_loop()
-        success = await loop.run_in_executor(None, _synth_voxcpm_to_mp3, chunk_text, actual_voice, out_chunk_mp3)
-        if success:
-            return
-        actual_voice = edge_fallback_voice
+            actual_voice = "vi-VN-HoaiMyNeural"
+        else:
+            actual_voice = "vi-VN-NamMinhNeural"
 
     if actual_voice == "gtts":
         try:
@@ -449,7 +445,7 @@ async def _synth_single_chunk(chunk_text: str, actual_voice: str, out_chunk_mp3:
 
     if not success:
         try:
-            print(f"[VoiceEngine] Kích hoạt Google TTS cứu cánh dự phòng cho [{actual_voice}]...")
+            print(f"[VoiceEngine] Kích hoạt Google TTS Tiếng Việt dự phòng cho [{actual_voice}]...")
             from gtts import gTTS
             tts = gTTS(text=chunk_text, lang='vi', slow=False)
             tts.save(str(out_chunk_mp3))
@@ -464,16 +460,16 @@ def _resolve_persona_and_voice(voice: str):
     low = actual_voice.lower()
     if low.startswith("voxcpm"):
         if "elder" in low:
-            return "elder", "voxcpm-elder"
+            return "elder", "vi-VN-NamMinhNeural"
         if "hoaimy" in low or "female" in low:
-            return "standard", "voxcpm-hoaimy"
-        return "standard", "voxcpm-namminh"
+            return "standard", "vi-VN-HoaiMyNeural"
+        return "standard", "vi-VN-NamMinhNeural"
     if "Elder" in actual_voice or actual_voice == "namminh_elder":
         persona = "elder"
-        actual_voice = "voxcpm-elder"
+        actual_voice = "vi-VN-NamMinhNeural"
     elif "Zen" in actual_voice or actual_voice == "hoaimy_zen":
         persona = "zen"
-        actual_voice = "voxcpm-hoaimy"
+        actual_voice = "vi-VN-HoaiMyNeural"
     elif "HoaiMy" in actual_voice or actual_voice == "hoaimy_solo":
         actual_voice = "vi-VN-HoaiMyNeural"
     elif "NamMinh" in actual_voice or actual_voice == "namminh_solo":

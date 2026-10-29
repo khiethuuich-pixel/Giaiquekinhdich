@@ -30,7 +30,7 @@ PODCAST_MASTER_NAME = "Dịch Sư Nam Minh"
 PODCAST_MASTER_VOICE = os.getenv("PODCAST_MASTER_VOICE", "vi-VN-NamMinhNeural")
 
 # Default Video & Voice Settings
-DEFAULT_VOICE = os.getenv("DEFAULT_VOICE", "voxcpm-elder")
+DEFAULT_VOICE = os.getenv("DEFAULT_VOICE", "vi-VN-NamMinhNeural")
 DEFAULT_ASPECT_RATIO = os.getenv("DEFAULT_ASPECT_RATIO", "16:9")  # "16:9" or "9:16"
 
 # Resolution Presets
