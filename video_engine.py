@@ -518,7 +518,7 @@ def render_vertical_video(
         filter_composite = (
             f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2-30[v1];"
             f"[v1]subtitles={sub_rel_name}[vout];"
-            f"[2:a][3:a]amix=inputs=2:duration=first:weights=1.2 0.35[aout]"
+            f"[2:a][3:a]amix=inputs=2:duration=first:weights=1.35 0.10[aout]"
         )
 
         cmd_final = [
@@ -558,7 +558,7 @@ def render_vertical_video(
             f"[v1]drawtext=text='KINH DỊCH CHIÊM BỐC':font='Segoe UI':fontsize=42:fontcolor=#D4AF37:x=(w-text_w)/2:y=160[v2];"
             f"[v2]drawtext=text='Hỏi\\: {safe_q}':font='Segoe UI':fontsize=34:fontcolor=#E5DDCB:x=(w-text_w)/2:y=230[v3];"
             f"[v3]subtitles={ass_sub.name}[vout];"
-            f"[1:a][2:a]amix=inputs=2:duration=first:weights=1.2 0.35[aout]"
+            f"[1:a][2:a]amix=inputs=2:duration=first:weights=1.35 0.10[aout]"
         )
         cmd_fallback = [
             "ffmpeg", "-y", "-loglevel", "error",
