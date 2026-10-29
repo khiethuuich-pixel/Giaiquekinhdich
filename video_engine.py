@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 import cv2
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -358,9 +358,12 @@ def render_vertical_video(
         t_per = t_rem / max(1, num_cards)
         t_cards_list = [t_per] * num_cards
 
-    safe_q = re.sub(r'[\':"\\;`]', '', question).strip()
-    if len(safe_q) > 42:
-        safe_q = safe_q[:39] + "..."
+    # Strip any Chinese characters (Hanzi) from question before displaying on video
+    clean_q_vi = re.sub(r'[\u2e80-\u2eff\u3000-\u303f\u3400-\u4dbf\u4dc0-\u4dff\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]+', ' ', question)
+    safe_q = re.sub(r'[\':"\\;`]', '', clean_q_vi)
+    safe_q = re.sub(r'\s+', ' ', safe_q).strip()
+    if len(safe_q) > 46:
+        safe_q = safe_q[:43] + "..."
 
     log(f"Bắt đầu dựng chuỗi cận cảnh đồng bộ 100% cho quẻ: {hexagram_title}...")
 
@@ -455,9 +458,7 @@ def render_vertical_video(
 
         filter_bg_static = (
             f"scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
-            f"boxblur=30:5,eq=brightness=-0.35:saturation=1.2,"
-            f"drawtext=text='KINH DỊCH CHIÊM BỐC':font='Segoe UI':fontsize=42:fontcolor=#D4AF37:x=(w-text_w)/2:y=160,"
-            f"drawtext=text='Hỏi\\: {safe_q}':font='Segoe UI':fontsize=34:fontcolor=#E5DDCB:x=(w-text_w)/2:y=230"
+            f"boxblur=30:5,eq=brightness=-0.35:saturation=1.2"
         )
         cmd_bg_static = [
             "ffmpeg", "-y", "-loglevel", "error",
@@ -467,6 +468,52 @@ def render_vertical_video(
             str(bg_banner_png)
         ]
         subprocess.run(cmd_bg_static, check=True)
+
+        # Render 100% crisp Vietnamese TrueType typography onto bg_banner_png via Pillow
+        try:
+            with Image.open(bg_banner_png).convert("RGBA") as bg_im:
+                draw = ImageDraw.Draw(bg_im)
+                font_candidates_bold = [
+                    "C:/Windows/Fonts/segoeuib.ttf",
+                    "C:/Windows/Fonts/timesbd.ttf",
+                    "C:/Windows/Fonts/arialbd.ttf",
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                ]
+                font_candidates_reg = [
+                    "C:/Windows/Fonts/segoeui.ttf",
+                    "C:/Windows/Fonts/times.ttf",
+                    "C:/Windows/Fonts/arial.ttf",
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                ]
+                font_title = None
+                font_q = None
+                for fp in font_candidates_bold:
+                    if os.path.exists(fp):
+                        font_title = ImageFont.truetype(fp, 44)
+                        break
+                for fp in font_candidates_reg:
+                    if os.path.exists(fp):
+                        font_q = ImageFont.truetype(fp, 34)
+                        break
+                if font_title is None:
+                    font_title = ImageFont.load_default()
+                if font_q is None:
+                    font_q = ImageFont.load_default()
+
+                title_txt = "KINH DỊCH CHIÊM BỐC"
+                q_txt = f"Hỏi: {safe_q}" if safe_q else "Luận Giải Quẻ Kinh Dịch"
+
+                tb1 = draw.textbbox((0, 0), title_txt, font=font_title)
+                tw1 = tb1[2] - tb1[0]
+                draw.text(((1080 - tw1) / 2, 152), title_txt, font=font_title, fill=(212, 175, 55, 255))
+
+                tb2 = draw.textbbox((0, 0), q_txt, font=font_q)
+                tw2 = tb2[2] - tb2[0]
+                draw.text(((1080 - tw2) / 2, 218), q_txt, font=font_q, fill=(229, 221, 203, 255))
+
+                bg_im.convert("RGB").save(bg_banner_png)
+        except Exception as font_err:
+            log(f"Cảnh báo vẽ tiêu đề tiếng Việt bằng Pillow: {font_err}")
 
         filter_composite = (
             f"[0:v][1:v]overlay=(W-w)/2:(H-h)/2-30[v1];"
