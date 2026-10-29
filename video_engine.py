@@ -334,24 +334,27 @@ def render_vertical_video(
         num_cards = len(card_paths)
         log(f"Đã định vị và sắp xếp chuẩn xác {num_cards} lá bài (Lá 1 -> Lá {num_cards}).")
 
-    # 4. Calculate exact timing per segment (synchronized with TTS sections if available)
+    # 4. Calculate exact timing per segment (synchronized with TTS sections if available + tail buffer so AI finishes reading 100%)
     fps = VIDEO_FPS
+    tail_pad_sec = 2.2
+    total_vid_dur = duration + tail_pad_sec
     if (
         section_timings
         and isinstance(section_timings.get("t_cards"), list)
         and len(section_timings["t_cards"]) == num_cards
     ):
         t_intro = max(0.0, float(section_timings.get("t_intro", 0.0)))
-        t_cards_list = [max(0.8, float(x)) for x in section_timings["t_cards"]]
-        t_outro = max(0.0, float(section_timings.get("t_outro", 0.0)))
+        t_cards_list = [max(1.2, float(x) + 0.25) for x in section_timings["t_cards"]]
+        t_outro = max(1.8, float(section_timings.get("t_outro", 0.0)) + tail_pad_sec)
+        total_vid_dur = max(total_vid_dur, t_intro + sum(t_cards_list) + t_outro)
         log(
-            f"Đồng bộ thời gian chuẩn 100% theo giọng đọc: Intro={t_intro:.2f}s | "
+            f"Đồng bộ thời gian chuẩn 100% theo giọng đọc (+đệm dư cuối): Intro={t_intro:.2f}s | "
             f"Lá 1..{num_cards}={[round(x, 2) for x in t_cards_list]} | Outro={t_outro:.2f}s"
         )
     else:
         t_intro = min(4.5, duration * 0.14)
-        t_outro = min(4.5, duration * 0.14)
-        t_rem = max(1.0, duration - t_intro - t_outro)
+        t_outro = min(6.5, duration * 0.16) + tail_pad_sec
+        t_rem = max(1.0, total_vid_dur - t_intro - t_outro)
         t_per = t_rem / max(1, num_cards)
         t_cards_list = [t_per] * num_cards
 
@@ -474,7 +477,7 @@ def render_vertical_video(
         cmd_final = [
             "ffmpeg", "-y",
             "-loglevel", "error",
-            "-loop", "1", "-framerate", str(fps), "-t", f"{duration:.3f}", "-i", str(bg_banner_png),
+            "-loop", "1", "-framerate", str(fps), "-t", f"{total_vid_dur:.3f}", "-i", str(bg_banner_png),
             "-i", str(concat_video),
             "-i", str(voice_audio),
             "-i", str(bell_audio),
@@ -487,7 +490,7 @@ def render_vertical_video(
             "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-b:a", "192k",
-            "-t", f"{duration:.3f}",
+            "-t", f"{total_vid_dur:.3f}",
             str(out_video)
         ]
 
