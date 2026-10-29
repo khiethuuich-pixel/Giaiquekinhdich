@@ -355,9 +355,70 @@ def _split_text_into_chunks(text: str, max_chars: int = 1600) -> list[str]:
         chunks.append(current)
     return chunks if chunks else [text]
 
+_VOXCPM_SPACE_CLIENT = None
+_VOXCPM_CONTROLS = {
+    "voxcpm-namminh": ("male", "Deep, calm, resonant Vietnamese male narrator voice, authoritative and philosophical, clear articulation"),
+    "voxcpm-hoaimy": ("female", "Vietnamese female narrator, gentle, clear, warm and expressive voice, natural storytelling pace"),
+    "voxcpm-elder": ("male", "Wise elderly Vietnamese I Ching master, deep resonant baritone voice, slow, solemn, authoritative tone"),
+}
+
+def _synth_voxcpm_to_mp3(chunk_text: str, vox_voice: str, out_chunk_mp3: Path) -> bool:
+    """Synthesize a single text chunk to MP3 using OpenBMB VoxCPM2 (with reference audio anchoring)."""
+    global _VOXCPM_SPACE_CLIENT
+    out_chunk_mp3 = Path(out_chunk_mp3)
+    try:
+        from tts_voxcpm import SpaceClient
+        if _VOXCPM_SPACE_CLIENT is None:
+            _VOXCPM_SPACE_CLIENT = SpaceClient()
+        gender, control = _VOXCPM_CONTROLS.get(vox_voice, _VOXCPM_CONTROLS["voxcpm-namminh"])
+        base_dir = Path(__file__).resolve().parent
+        ref_wav = base_dir / "assets" / f"voxcpm_ref_{gender}.wav"
+        ref_path = str(ref_wav) if ref_wav.exists() and ref_wav.stat().st_size > 5000 else None
+        synth_txt = chunk_text.strip()
+        if not synth_txt.startswith("..."):
+            synth_txt = "... " + synth_txt
+        audio_bytes = _VOXCPM_SPACE_CLIENT.generate(
+            text=synth_txt,
+            control=control,
+            ref_wav=ref_path,
+            cfg=2.0,
+            normalize=False,
+            denoise=bool(ref_path),
+        )
+        if not audio_bytes or len(audio_bytes) < 800:
+            return False
+        tmp_in = out_chunk_mp3.with_suffix(".vox_raw.mp3")
+        tmp_in.write_bytes(audio_bytes)
+        subprocess.run([
+            "ffmpeg", "-y", "-loglevel", "error",
+            "-i", str(tmp_in),
+            "-af", "silenceremove=start_periods=1:start_duration=0.03:start_threshold=-40dB",
+            "-acodec", "libmp3lame", "-ar", "48000", "-ac", "1", "-b:a", "192k",
+            str(out_chunk_mp3)
+        ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            tmp_in.unlink()
+        except Exception:
+            pass
+        return out_chunk_mp3.exists() and out_chunk_mp3.stat().st_size > 800
+    except Exception as ve:
+        print(f"[VoiceEngine] VoxCPM2 ({vox_voice}) fallback sang Edge-TTS: {ve}")
+        return False
+
 async def _synth_single_chunk(chunk_text: str, actual_voice: str, out_chunk_mp3: Path):
-    """Synthesize a single text chunk to MP3 with Edge-TTS and gTTS fallback."""
+    """Synthesize a single text chunk to MP3 with OpenBMB VoxCPM2 primary, Edge-TTS and gTTS fallback."""
+    out_chunk_mp3 = Path(out_chunk_mp3)
     success = False
+    edge_fallback_voice = "vi-VN-NamMinhNeural"
+    if str(actual_voice).startswith("voxcpm"):
+        if "hoaimy" in actual_voice.lower() or "female" in actual_voice.lower():
+            edge_fallback_voice = "vi-VN-HoaiMyNeural"
+        loop = asyncio.get_running_loop()
+        success = await loop.run_in_executor(None, _synth_voxcpm_to_mp3, chunk_text, actual_voice, out_chunk_mp3)
+        if success:
+            return
+        actual_voice = edge_fallback_voice
+
     if actual_voice == "gtts":
         try:
             from gtts import gTTS
@@ -400,12 +461,19 @@ async def _synth_single_chunk(chunk_text: str, actual_voice: str, out_chunk_mp3:
 def _resolve_persona_and_voice(voice: str):
     persona = "standard"
     actual_voice = voice or DEFAULT_VOICE
+    low = actual_voice.lower()
+    if low.startswith("voxcpm"):
+        if "elder" in low:
+            return "elder", "voxcpm-elder"
+        if "hoaimy" in low or "female" in low:
+            return "standard", "voxcpm-hoaimy"
+        return "standard", "voxcpm-namminh"
     if "Elder" in actual_voice or actual_voice == "namminh_elder":
         persona = "elder"
-        actual_voice = "vi-VN-NamMinhNeural"
+        actual_voice = "voxcpm-elder"
     elif "Zen" in actual_voice or actual_voice == "hoaimy_zen":
         persona = "zen"
-        actual_voice = "vi-VN-HoaiMyNeural"
+        actual_voice = "voxcpm-hoaimy"
     elif "HoaiMy" in actual_voice or actual_voice == "hoaimy_solo":
         actual_voice = "vi-VN-HoaiMyNeural"
     elif "NamMinh" in actual_voice or actual_voice == "namminh_solo":
