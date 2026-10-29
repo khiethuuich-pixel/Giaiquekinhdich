@@ -360,34 +360,36 @@ def _split_text_into_chunks(text: str, max_chars: int = 1600) -> list[str]:
 
 _VOXCPM_SPACE_CLIENT = None
 _VOXCPM_CONTROLS = {
-    "voxcpm-nam-tram-am": ("male", "Deep, warm, calm Vietnamese male narrator, resonant baritone voice, steady philosophical I Ching reading pace"),
+    "test_vi_design": ("male", "Deep, calm, resonant Vietnamese male narrator voice, authoritative and philosophical, clear articulation"),
+    "nam_tram_am": ("male", "Deep, calm, resonant Vietnamese male narrator voice, authoritative and philosophical, clear articulation"),
+    "voxcpm-nam-tram-am": ("male", "Deep, calm, resonant Vietnamese male narrator voice, authoritative and philosophical, clear articulation"),
     "voxcpm-namminh": ("male", "Deep, calm, resonant Vietnamese male narrator voice, authoritative and philosophical, clear articulation"),
     "voxcpm-hoaimy": ("female", "Vietnamese female narrator, gentle, clear, warm and expressive voice, natural storytelling pace"),
     "voxcpm-elder": ("male", "Wise elderly Vietnamese I Ching master, deep resonant baritone voice, slow, solemn, authoritative tone"),
 }
 
 def _synth_voxcpm_to_mp3(chunk_text: str, vox_voice: str, out_chunk_mp3: Path) -> bool:
-    """Synthesize a single text chunk to MP3 using OpenBMB VoxCPM2 (with reference audio anchoring)."""
+    """Synthesize a single text chunk to MP3 using OpenBMB VoxCPM2 (with test_vi_design.wav reference audio anchoring)."""
     global _VOXCPM_SPACE_CLIENT
     out_chunk_mp3 = Path(out_chunk_mp3)
     try:
         from tts_voxcpm import SpaceClient
         if _VOXCPM_SPACE_CLIENT is None:
             _VOXCPM_SPACE_CLIENT = SpaceClient()
-        gender, control = _VOXCPM_CONTROLS.get(vox_voice, _VOXCPM_CONTROLS["voxcpm-elder"])
+        gender, control = _VOXCPM_CONTROLS.get(vox_voice, _VOXCPM_CONTROLS["test_vi_design"])
         base_dir = Path(__file__).resolve().parent
-        ref_wav = base_dir / "assets" / f"voxcpm_ref_{gender}.wav"
+        ref_wav = base_dir / "assets" / ("test_vi_design.wav" if gender == "male" else f"voxcpm_ref_{gender}.wav")
+        if not ref_wav.exists():
+            ref_wav = base_dir / "assets" / f"voxcpm_ref_{gender}.wav"
         ref_path = str(ref_wav) if ref_wav.exists() and ref_wav.stat().st_size > 5000 else None
         synth_txt = chunk_text.strip()
-        if not synth_txt.startswith("..."):
-            synth_txt = "... " + synth_txt
         audio_bytes = _VOXCPM_SPACE_CLIENT.generate(
             text=synth_txt,
             control=control,
             ref_wav=ref_path,
             cfg=2.0,
             normalize=False,
-            denoise=bool(ref_path),
+            denoise=False,
         )
         if not audio_bytes or len(audio_bytes) < 800:
             return False
@@ -413,7 +415,7 @@ async def _synth_single_chunk(chunk_text: str, actual_voice: str, out_chunk_mp3:
     """Synthesize a single text chunk to MP3 using VoxCPM2 / warm-deep Edge-TTS primary and gTTS (vi) fallback."""
     out_chunk_mp3 = Path(out_chunk_mp3)
     success = False
-    is_vox = str(actual_voice).lower().startswith("voxcpm")
+    is_vox = str(actual_voice).lower().startswith("voxcpm") or str(actual_voice).lower() in ("test_vi_design", "nam_tram_am")
     if is_vox:
         success = await asyncio.to_thread(_synth_voxcpm_to_mp3, chunk_text, str(actual_voice).lower(), out_chunk_mp3)
         if "hoaimy" in actual_voice.lower() or "female" in actual_voice.lower():

@@ -64,10 +64,13 @@ if hasattr(sys.stderr, "reconfigure"):
 DEFAULT_SR = 24000
 DEFAULT_SPACE_URL = os.environ.get("VOXCPM_SPACE_URL", "https://openbmb-voxcpm-demo.hf.space")
 DEFAULT_MODEL_ID = os.environ.get("VOXCPM_MODEL_ID", "openbmb/VoxCPM2")
+DEFAULT_VI_REF_WAV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_vi_design.wav")
 
 VOICE_PRESETS = {
-    # Vietnamese presets
-    "vi_male": "Vietnamese male narrator, warm, clear, resonant baritone voice, calm and natural storytelling pace",
+    # Vietnamese presets (default to test_vi_design.wav reference timbre)
+    "test_vi_design": "Deep, calm, resonant Vietnamese male narrator voice, authoritative and philosophical, clear articulation",
+    "nam_tram_am": "Deep, calm, resonant Vietnamese male narrator voice, authoritative and philosophical, clear articulation",
+    "vi_male": "Deep, calm, resonant Vietnamese male narrator voice, authoritative and philosophical, clear articulation",
     "vi_male_warm": "Deep, calm, resonant Vietnamese male narrator voice, authoritative and philosophical, clear articulation",
     "vi_male_news": "Professional Vietnamese male news anchor, crisp, steady, authoritative and objective tone",
     "vi_female": "Vietnamese female narrator, gentle, clear, warm and expressive voice, natural storytelling pace",
@@ -485,13 +488,17 @@ def main():
         if not a.out:
             sys.exit("tts_voxcpm.py: --text requires --out <path.wav>")
         ctrl = resolve_control({}, a.control, a.voice)
+        single_ref = a.ref_wav
+        v_single = str(a.voice or "").strip().lower()
+        if not single_ref and v_single in ("test_vi_design", "nam_tram_am", "vi_male_warm", "vi_male", "vi_a", "vi-vn-namminhneural") and os.path.exists(DEFAULT_VI_REF_WAV):
+            single_ref = DEFAULT_VI_REF_WAV
         try:
             raw_audio = synthesize_one(
                 client,
                 backend,
                 text=a.text,
                 control=ctrl,
-                ref_wav=a.ref_wav,
+                ref_wav=single_ref,
                 prompt_text=a.prompt_text,
                 cfg=a.cfg,
                 steps=a.steps,
@@ -532,6 +539,9 @@ def main():
         say = L.get("say", L["text"])
         ctrl = resolve_control(L, a.control, a.voice)
         ref_wav = L.get("ref_wav") or a.ref_wav
+        v_name = str(L.get("voice") or a.voice or "").strip().lower()
+        if not ref_wav and v_name in ("test_vi_design", "nam_tram_am", "vi_male_warm", "vi_male", "vi_a", "vi-vn-namminhneural") and os.path.exists(DEFAULT_VI_REF_WAV):
+            ref_wav = DEFAULT_VI_REF_WAV
         prompt_text = L.get("prompt_text") if "prompt_text" in L else a.prompt_text
         cfg = float(L.get("cfg", a.cfg))
         steps = int(L.get("steps", a.steps))
