@@ -49,6 +49,14 @@ def cast_and_collect(layout: str = "random", headless: bool = True, log_cb=None)
             viewport={"width": 1280, "height": 900},
             permissions=["clipboard-read", "clipboard-write"]
         )
+        # Đặt sẵn trạng thái Cửu Nhị Tiểu Long đã thức trong ngày hôm nay để mở khóa ngay lập tức nút Chép Cho AI
+        context.add_init_script("""
+            try {
+                const d = new Date();
+                const todayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                localStorage.setItem("cuunhi_dragon_awake_date_v1", todayKey);
+            } catch (e) {}
+        """)
         page = context.new_page()
 
         try:
@@ -108,7 +116,7 @@ def cast_and_collect(layout: str = "random", headless: bool = True, log_cb=None)
                     log("Đang gọi Cửu Nhị Tiểu Long dậy để mở khóa nút Chép Cho AI...")
                     wake_btn.scroll_into_view_if_needed()
                     wake_btn.click()
-                    time.sleep(0.8)
+                    time.sleep(5.2)
             except Exception:
                 pass
 

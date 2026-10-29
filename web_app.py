@@ -512,7 +512,7 @@ def execute_direct_task(question: str, api_key: str, layout: str, voice: str):
 @app.post("/api/direct/run")
 async def api_direct_run(req: DirectRequest, background_tasks: BackgroundTasks):
     global DIRECT_JOB
-    if DIRECT_JOB["status"] == "running":
+    if DIRECT_JOB["status"] == "running" and (time.time() - DIRECT_JOB.get("started_at", 0)) < 180:
         return JSONResponse(status_code=400, content={"error": "Bảng cũ đang thực hiện một quẻ khác. Vui lòng chờ."})
 
     background_tasks.add_task(
@@ -622,7 +622,7 @@ def execute_direct_full_task(
 @app.post("/api/direct_full/run")
 async def api_direct_full_run(req: DirectFullRequest, background_tasks: BackgroundTasks):
     global DIRECT_FULL_JOB
-    if DIRECT_FULL_JOB["status"] == "running":
+    if DIRECT_FULL_JOB["status"] == "running" and (time.time() - DIRECT_FULL_JOB.get("started_at", 0)) < 180:
         return JSONResponse(status_code=400, content={"error": "Bảng Luận & Ghi Âm Full Phân Tích đang xử lý một quẻ khác. Vui lòng chờ."})
 
     background_tasks.add_task(
@@ -652,7 +652,7 @@ async def api_direct_home_run(req: DirectHomeRequest, background_tasks: Backgrou
     import base64
     from datetime import datetime
 
-    if DIRECT_FULL_JOB["status"] == "running":
+    if DIRECT_FULL_JOB["status"] == "running" and (time.time() - DIRECT_FULL_JOB.get("started_at", 0)) < 180:
         return JSONResponse(status_code=400, content={"error": "Hệ thống đang xử lý một quẻ khác. Vui lòng chờ giây lát."})
 
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
