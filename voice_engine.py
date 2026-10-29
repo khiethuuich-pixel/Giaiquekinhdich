@@ -370,7 +370,7 @@ def _synth_voxcpm_to_mp3(chunk_text: str, vox_voice: str, out_chunk_mp3: Path) -
         from tts_voxcpm import SpaceClient
         if _VOXCPM_SPACE_CLIENT is None:
             _VOXCPM_SPACE_CLIENT = SpaceClient()
-        gender, control = _VOXCPM_CONTROLS.get(vox_voice, _VOXCPM_CONTROLS["voxcpm-namminh"])
+        gender, control = _VOXCPM_CONTROLS.get(vox_voice, _VOXCPM_CONTROLS["voxcpm-elder"])
         base_dir = Path(__file__).resolve().parent
         ref_wav = base_dir / "assets" / f"voxcpm_ref_{gender}.wav"
         ref_path = str(ref_wav) if ref_wav.exists() and ref_wav.stat().st_size > 5000 else None
