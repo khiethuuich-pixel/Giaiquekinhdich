@@ -10,6 +10,8 @@ load_dotenv(BASE_DIR / ".env")
 
 # API Keys
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
 # Directory Paths
 OUTPUT_DIR = BASE_DIR / "output"

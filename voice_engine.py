@@ -128,8 +128,9 @@ def condense_analysis_to_concise_script(raw_text: str, question: str = "", num_c
     max_words_allowed = 85 + max(1, num_cards) * 32
 
     if not has_section_headers and len(words) <= max_words_allowed:
+        raw_split = split_analysis_into_card_sections(txt, num_cards)
         cleaned_direct = sanitize_script_for_tts(txt)
-        if num_cards <= 1 or split_analysis_into_card_sections(cleaned_direct, num_cards).get("matched"):
+        if num_cards <= 1 or raw_split.get("matched") or split_analysis_into_card_sections(cleaned_direct, num_cards).get("matched"):
             return cleaned_direct
 
     # Extract concise intro from PHẦN 1 or beginning
@@ -213,8 +214,8 @@ def split_analysis_into_card_sections(raw_text: str, num_cards: int) -> dict:
     for k in range(1, num_cards + 1):
         ord_pat = ORDINAL_WORDS.get(k, str(k))
         patterns = [
-            rf"(?:^|\n)\s*[+\-*•✦#]*\s*(?:\[?\s*Lá\s*(?:bài\s*)?(?:thứ\s*{ord_pat}|số\s*{k}|{k})|Vị\s*trí\s*(?:thứ\s*{ord_pat}|số\s*{k}|{k})|▶\s*Vị\s*trí\s*{k}|{k}\.\s+(?:Quẻ|Hào|Thể|Dụng|Thiên|Địa|Nhân|Kim|Mộc|Thủy|Hỏa|Thổ|Quá\s*Khứ|Bản\s*Thân|Diễn\s*Biến|Lá\s*Bài|Kết\s*Quả|Môi\s*Trường|Thiếu\s*Sót|Tình\s*Huống))",
-            rf"\b(?:Lá\s*(?:bài\s*)?thứ\s*{ord_pat}|Lá\s*(?:bài\s*)?số\s*{k}|Ở\s*vị\s*trí\s*(?:thứ\s*{ord_pat}|số\s*{k}|{k}))\b",
+            rf"(?:^|\n)\s*[+\-*•✦#]*\s*(?:\[?\s*Lá\s*(?:bài\s*)?(?:thứ\s*{ord_pat}|số\s*{ord_pat}|số\s*{k}|{ord_pat}|{k})\b|Vị\s*trí\s*(?:thứ\s*{ord_pat}|số\s*{ord_pat}|số\s*{k}|{ord_pat}|{k})\b|▶\s*Vị\s*trí\s*{k}\b|{k}\.\s+(?:Quẻ|Hào|Thể|Dụng|Thiên|Địa|Nhân|Kim|Mộc|Thủy|Hỏa|Thổ|Quá\s*Khứ|Bản\s*Thân|Diễn\s*Biến|Lá\s*Bài|Kết\s*Quả|Môi\s*Trường|Thiếu\s*Sót|Tình\s*Huống|Xuôi|Ngược|Hỗ\s*Trợ|Trở\s*Ngại|Yếu\s*Tố|Điều\s*Bạn|Tương\s*Lai|Vận\s*Hạn|Cách\s*Nhìn|Khuyên\s*Bảo))",
+            rf"\b(?:Lá\s*(?:bài\s*)?thứ\s*{ord_pat}|Lá\s*(?:bài\s*)?số\s*(?:{ord_pat}|{k})|Lá\s*(?:bài\s*)?(?:{ord_pat}|{k})\s*(?:[,:\-—\(]|tại\b|ứng\b|ở\b|hiển\b|báo\b|là\b)|Ở\s*vị\s*trí\s*(?:thứ\s*{ord_pat}|số\s*{k}|{ord_pat}|{k}))",
         ]
         found_idx = None
         for pat in patterns:
@@ -421,7 +422,8 @@ async def _synth_single_chunk(chunk_text: str, actual_voice: str, out_chunk_mp3:
     success = False
     is_vox = str(actual_voice).lower().startswith("voxcpm") or str(actual_voice).lower() in ("test_vi_design", "nam_tram_am")
     if is_vox:
-        success = await asyncio.to_thread(_synth_voxcpm_to_mp3, chunk_text, str(actual_voice).lower(), out_chunk_mp3)
+        if len(chunk_text) <= 220:
+            success = await asyncio.to_thread(_synth_voxcpm_to_mp3, chunk_text, str(actual_voice).lower(), out_chunk_mp3)
         if "hoaimy" in actual_voice.lower() or "female" in actual_voice.lower():
             actual_voice = "vi-VN-HoaiMyNeural"
         else:

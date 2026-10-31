@@ -1,12 +1,14 @@
 import json
+import os
 import re
 import sys
+import urllib.request
 from google import genai
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-from config import GEMINI_API_KEY
+from config import GEMINI_API_KEY, DEEPSEEK_API_KEY, DEEPSEEK_MODEL
 
 SYSTEM_PROMPT = """Bạn là một Đại Sư Dịch Học chính tông và bậc thầy kể chuyện (Storyteller) uyên bác, am tường 64 Quẻ Chu Dịch, Thoán Từ, Tượng Truyện, Hào Từ, Dịch Lý Phương Đông và Đạo Tùy Thời (Thời - Vị - Trung - Chính).
 
@@ -57,6 +59,10 @@ Nhiệm vụ tối thượng của bạn:
         * ⚠ ĐIỀU ĐẠI KỴ CẦN TRÁNH: Cạm bẫy, sai lầm tâm lý cần tuyệt đối kiêng dè.
         * ☯ KIM CHỈ NAM KẾT LUẬN: Câu trả lời sáng rõ, dứt khoát giải tỏa trăn trở cho đương số.
 
+QUY TẮC BẢO MẬT TUYỆT ĐỐI (KHÔNG TIẾT LỘ CÔNG NGHỆ):
+- Tuyệt đối KHÔNG ĐƯỢC TIẾT LỘ hay nhắc đến bất kỳ công nghệ, mô hình AI hay nhà cung cấp nền tảng nào (như DeepSeek, Gemini, OpenAI, ChatGPT, GPT, Claude, LLM, API, token, prompt, python, server...).
+- Giữ vững bản sắc và danh xưng là Tiểu Long Cửu Nhị, luận giải dựa trên tinh hoa Chu Dịch và cuốn Sách Thuyết Minh 64 Quẻ Đi Kèm Bộ Bài.
+
 BẮT BUỘC TRẢ VỀ ĐỊNH DẠNG JSON DUY NHẤT (không bọc trong markdown nào khác ngoài json block nếu có):
 {
   "hexagram_title": "Tên quẻ hoặc tên trận pháp ngắn gọn (Ví dụ: TRẬN PHÁP NGŨ HÀNH hoặc HỎA THỦY VỊ TẾ)",
@@ -68,23 +74,97 @@ BẮT BUỘC TRẢ VỀ ĐỊNH DẠNG JSON DUY NHẤT (không bọc trong markd
 """
 
 CANDIDATE_MODELS = [
+    "gemini-2.5-flash",
+    "gemini-flash-latest",
+    "gemini-2.0-flash",
     "gemini-flash-lite-latest",
     "gemini-3.5-flash-lite",
     "gemini-3.1-flash-lite",
     "gemini-3.5-flash",
-    "gemini-flash-latest",
-    "gemini-3-flash-preview",
-    "gemini-3.7-flash",
-    "gemini-3.8-flash"
 ]
 
-def analyze_and_script(question: str, hexagram_data: str, api_key: str = None, num_cards: int = 0) -> dict:
-    """Call Gemini with multi-model fallback to interpret I Ching and generate video script."""
-    key = api_key or GEMINI_API_KEY
-    if not key:
-        raise ValueError("Chưa có GEMINI_API_KEY. Vui lòng nhập API Key để tiếp tục.")
+def _compact_hexagram_data_preserve_all_cards(hexagram_data: str, max_len: int = 12000) -> str:
+    """If hexagram_data is very large (e.g. 10 cards with full Bách Khoa HTML), strip only verbose Bách Khoa essays while preserving 100% of all cards (1..N)."""
+    if not hexagram_data or len(hexagram_data) <= max_len:
+        return hexagram_data or ""
+    compacted = re.sub(
+        r"━+\s*\n\s*【(?:BÁCH KHOA KINH DỊCH TOÀN THƯ|BẢN QUÁI: TOÀN BỘ BÁCH KHOA|HÀO ĐỘNG: TOÀN BỘ BÁCH KHOA|BIẾN QUÁI: TOÀN BỘ BÁCH KHOA)[\s\S]*?(?=\n(?:---|===|▶\s*Vị\s*trí|▶\s*【|【Lá\s*\d)|\Z)",
+        "",
+        hexagram_data,
+    )
+    return compacted
 
-    client = genai.Client(api_key=key)
+def _extract_cards_from_raw_hexagram_data(hexagram_data: str, num_cards: int) -> list[dict]:
+    """Extract per-card name, position, and core meaning for all cards 1..N from hexagram_data."""
+    text = hexagram_data or ""
+    blocks = re.split(r"(?:\n-{15,}\n|\n(?=▶\s*(?:【?\s*)?Vị\s*trí))", text)
+    cards_info = []
+    for blk in blocks:
+        if not re.search(r"(?:▶\s*(?:【?\s*)?Vị\s*trí|•\s*(?:Tên|Lá bài quẻ|Lá bài hào)\s*:)", blk):
+            continue
+        pos_m = re.search(r"▶\s*【?([^】\n]+)】?", blk)
+        name_m = re.search(r"•\s*(?:Tên|Lá bài quẻ|Lá bài hào)\s*:\s*([^\n]+)", blk)
+        desc_m = re.search(r"•\s*(?:Lời giải|Lời khuyên hành vi cốt lõi|Lời khuyên hành đạo|Ý nghĩa cốt lõi|Tổng quan thời vận)\s*:\s*([^\n]+)", blk)
+        sub_m = re.search(r"•\s*Ý nghĩa\s*:\s*([^\n]+)", blk)
+        pos_str = pos_m.group(1).strip() if pos_m else f"Vị trí {len(cards_info) + 1}"
+        name_str = name_m.group(1).strip() if name_m else f"Quẻ thứ {len(cards_info) + 1}"
+        desc_str = (desc_m.group(1).strip() if desc_m else (sub_m.group(1).strip() if sub_m else "Thuận thời đắc vị, giữ tâm trung chính.")).strip()
+        cards_info.append({
+            "pos": re.sub(r"[\u4dc0-\u4dff\[\]【】]", "", pos_str).strip()[:85],
+            "name": re.sub(r"[\u4dc0-\u4dff\[\]【】]", "", name_str).strip()[:65],
+            "desc": re.sub(r"[\u4dc0-\u4dff\[\]【】]", "", desc_str).strip()[:180],
+        })
+    target_n = max(1, num_cards or len(cards_info) or 1)
+    while len(cards_info) < target_n:
+        idx = len(cards_info) + 1
+        cards_info.append({
+            "pos": f"Lá thứ {idx}",
+            "name": f"Quẻ Kinh Dịch ở vị trí {idx}",
+            "desc": "Giữ vững nội lực, quan sát thời thế và hành xử cẩn trọng đúng đạo.",
+        })
+    return cards_info[:target_n]
+
+def call_deepseek_analyze(user_content: str, api_key: str = None) -> dict:
+    """Call DeepSeek API for in-depth I Ching analysis and structured script."""
+    ds_key = (api_key or os.getenv("DEEPSEEK_API_KEY") or DEEPSEEK_API_KEY or "").strip()
+    if not ds_key:
+        return None
+    try:
+        print("[GeminiSage] Kích hoạt luận giải sâu sắc bằng DeepSeek AI...")
+        payload = {
+            "model": os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_content}
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.65
+        }
+        req = urllib.request.Request(
+            "https://api.deepseek.com/chat/completions",
+            headers={
+                "Authorization": f"Bearer {ds_key}",
+                "Content-Type": "application/json",
+            },
+            data=json.dumps(payload).encode("utf-8")
+        )
+        with urllib.request.urlopen(req, timeout=55) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            if content:
+                parsed = json.loads(content)
+                print("[GeminiSage] Luận giải thành công với DeepSeek AI!")
+                return parsed
+    except Exception as e:
+        print(f"[GeminiSage] DeepSeek AI bận ({e}), tiếp tục thử các mô hình Gemini...")
+    return None
+
+def analyze_and_script(question: str, hexagram_data: str, api_key: str = None, num_cards: int = 0) -> dict:
+    """Call DeepSeek / Gemini with multi-model fallback to interpret I Ching and generate video script."""
+    key = api_key or GEMINI_API_KEY
+    ds_key = (api_key if (api_key and api_key.startswith("sk-")) else None) or os.getenv("DEEPSEEK_API_KEY") or DEEPSEEK_API_KEY
+
+    compacted_hex_data = _compact_hexagram_data_preserve_all_cards(hexagram_data, max_len=14000)
 
     card_count_instruction = ""
     if num_cards > 0:
@@ -100,63 +180,97 @@ def analyze_and_script(question: str, hexagram_data: str, api_key: str = None, n
 "{question}"
 
 DỮ LIỆU CÁC LÁ BÀI & TRẬN PHÁP THU THẬP TỪ ICHINGTAROT.COM:
-{hexagram_data}
+{compacted_hex_data}
 
 YÊU CẦU ĐẶC BIỆT:{card_count_instruction}
-- Hãy kiểm tra tổng số lượng lá bài trong dữ liệu trên.
-- BẮT BUỘC: Luận giải 100% đầy đủ từng lá bài từ Lá 1 đến lá cuối cùng trong cả full_interpretation (bài luận toàn văn) và video_script (kịch bản thuyết minh).
-- RIÊNG VỚI video_script (KỊCH BẢN THUYẾT MINH): Phải CÀNG NGẮN GỌN CÀNG TỐT nhưng vẫn mang ĐẦY ĐỦ THÔNG ĐIỆP (Mở màn đúng 1 câu ngắn; mỗi lá bài từ Lá thứ nhất đến Lá cuối cùng đúng 1 câu súc tích đi thẳng vào thông điệp; kết bài đúng 1 câu bắt đầu bằng "Tóm lại,"). Tuyệt đối không đọc tiêu đề Phần 1/2/3/4, không dài dòng!
+- Hãy kiểm tra tổng số lượng lá bài trong dữ liệu trên ({num_cards if num_cards > 0 else 'tất cả'} lá bài).
+- BẮT BUỘC: Luận giải 100% đầy đủ từng lá bài từ Lá 1 đến lá cuối cùng (Lá {num_cards if num_cards > 0 else 'N'}) trong cả full_interpretation (bài luận toàn văn) và video_script (kịch bản thuyết minh). Tuyệt đối không được dừng ở lá 1 hay lá 2!
+- RIÊNG VỚI video_script (KỊCH BẢN THUYẾT MINH): Phải CÀNG NGẮN GỌN CÀNG TỐT nhưng vẫn mang ĐẦY ĐỦ THÔNG ĐIỆP CỦA TẤT CẢ {num_cards if num_cards > 0 else 'CÁC'} LÁ BÀI (Mở màn đúng 1 câu ngắn; mỗi lá bài từ Lá thứ nhất đến Lá cuối cùng đúng 1 câu súc tích đi thẳng vào thông điệp; kết bài đúng 1 câu bắt đầu bằng "Tóm lại,"). Tuyệt đối không đọc tiêu đề Phần 1/2/3/4, không dài dòng!
 """
+
+    # Priority 1: Call DeepSeek AI if configured
+    if ds_key:
+        ds_res = call_deepseek_analyze(user_content, ds_key)
+        if ds_res and ds_res.get("full_interpretation"):
+            return ds_res
+
+    if not key:
+        print("[GeminiSage] Không có GEMINI_API_KEY, chuyển sang bộ luận giải Dịch lý nội bộ...")
+        key = None
 
     response = None
     last_err = None
 
-    for model_name in CANDIDATE_MODELS:
+    if key:
         try:
-            print(f"[GeminiSage] Đang luận quẻ bằng mô hình: {model_name}...")
-            response = client.models.generate_content(
-                model=model_name,
-                contents=user_content,
-                config={
-                    "system_instruction": SYSTEM_PROMPT,
-                    "response_mime_type": "application/json",
-                    "temperature": 0.65,
-                    "max_output_tokens": 8192,
-                }
-            )
-            if response and response.text:
-                print(f"[GeminiSage] Thành công với mô hình: {model_name}")
-                break
-        except Exception as err:
-            print(f"[GeminiSage] Mô hình {model_name} bận ({str(err)[:80]}), chuyển sang mô hình tiếp theo...")
-            last_err = err
+            client = genai.Client(api_key=key)
+            for model_name in CANDIDATE_MODELS:
+                try:
+                    print(f"[GeminiSage] Đang luận quẻ bằng mô hình: {model_name}...")
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=user_content,
+                        config={
+                            "system_instruction": SYSTEM_PROMPT,
+                            "response_mime_type": "application/json",
+                            "temperature": 0.65,
+                            "max_output_tokens": 8192,
+                        }
+                    )
+                    if response and response.text:
+                        print(f"[GeminiSage] Thành công với mô hình: {model_name}")
+                        break
+                except Exception as err:
+                    print(f"[GeminiSage] Mô hình {model_name} bận ({str(err)[:80]}), chuyển sang mô hình tiếp theo...")
+                    last_err = err
+        except Exception as client_err:
+            last_err = client_err
 
     if not response or not response.text:
-        print(f"[GeminiSage] Tất cả mô hình Gemini đều bận ({last_err}), kích hoạt bộ luận giải Dịch lý nội bộ từ dữ liệu Chép Cho AI...")
+        print(f"[GeminiSage] Tất cả mô hình Gemini đều bận ({last_err}), kích hoạt bộ luận giải Dịch lý nội bộ đủ {num_cards or 'tất cả'} lá bài...")
         clean_lines = [ln.strip() for ln in (hexagram_data or "").splitlines() if ln.strip()]
         detected_title = "QUẺ KINH DỊCH CỬU NHỊ"
         for ln in clean_lines[:15]:
-            if any(k in ln.upper() for k in ["QUẺ", "TRẬN", "LÁ BÀI", "THÁP LA", "TAM TÀI"]):
+            if any(k in ln.upper() for k in ["QUẺ", "TRẬN", "LÁ BÀI", "THÁP LA", "TAM TÀI", "THẬP TINH", "THẤT TINH"]):
                 detected_title = re.sub(r"[\u4dc0-\u4dff#*✦☯•=\-\[\]【】]", " ", ln).strip()[:75]
                 break
-        excerpt = "\n".join(clean_lines[:35])
+
+        ord_names = {
+            1: "nhất", 2: "hai", 3: "ba", 4: "tư", 5: "năm",
+            6: "sáu", 7: "bảy", 8: "tám", 9: "chín", 10: "mười",
+            11: "mười một", 12: "mười hai"
+        }
+        extracted_cards = _extract_cards_from_raw_hexagram_data(hexagram_data, num_cards)
+        per_card_interp_lines = []
+        per_card_script_sents = []
+        for idx_c, c_info in enumerate(extracted_cards):
+            k_num = idx_c + 1
+            ord_vi = ord_names.get(k_num, str(k_num))
+            per_card_interp_lines.append(
+                f"+ Lá {k_num}: [{c_info['pos']}] — {c_info['name']}\n"
+                f"  * Luận giải Dịch lý & Soi chiếu câu hỏi: {c_info['desc']}"
+            )
+            per_card_script_sents.append(
+                f"Lá thứ {ord_vi} tại {c_info['pos']} ứng với {c_info['name']}, {c_info['desc'].rstrip('.')}."
+            )
+
         fallback_interp = (
             f"PHẦN 1: TỔNG QUAN ĐỒ HÌNH TRẬN PHÁP & ĐẠI CỤC THỜI VẬN\n"
             f"Câu hỏi chiêm bốc: \"{question}\"\n"
-            f"Trải bài thu thập trực tiếp từ Trang Chủ I Ching Tarot · Cửu Nhị ({detected_title}) phản ánh sự giao thoa Âm Dương đang bước vào giai đoạn chuyển mình quan trọng.\n\n"
-            f"PHẦN 2: BẢN ĐỒ CHI TIẾT CÁC LÁ BÀI TRÊN TRANG CHỦ\n"
-            f"{excerpt}\n\n"
+            f"Trải bài ({detected_title} · {len(extracted_cards)} lá bài) phản ánh toàn diện vận trình và nhân duyên xoay quanh câu hỏi của đương số.\n\n"
+            f"PHẦN 2: BẢN ĐỒ CHI TIẾT TỪNG LÁ BÀI (ĐỦ {len(extracted_cards)} LÁ BÀI TỪ LÁ 1 ĐẾN LÁ {len(extracted_cards)})\n"
+            + "\n\n".join(per_card_interp_lines) + "\n\n"
             f"PHẦN 3: TƯƠNG TÁC ÂM DƯƠNG & VẬN ĐỘNG GIỮA CÁC QUẺ\n"
-            f"Các hào tượng và quẻ tượng trong trải bài tương ứng chặt chẽ với trăn trở hiện tại của đương số. Nội quái giữ thế chủ động, ngoại quái mở ra cơ hội thuận lợi nếu biết nắm bắt đúng thời điểm.\n\n"
+            f"Mạch vận động xuyên suốt {len(extracted_cards)} lá bài tương ứng chặt chẽ với trăn trở hiện tại của đương số. Nội quái giữ thế chủ động, ngoại quái mở ra cơ hội thuận lợi nếu biết nắm bắt đúng thời điểm.\n\n"
             f"PHẦN 4: ĐẠO TÙY THỜI & CHIẾN LƯỢC HÀNH ĐỘNG TOÀN DIỆN\n"
-            f"✦ VIỆC NÊN LÀM NGAY: Giữ vững tâm thế chính trực, triển khai từng bước theo đúng lời khuyên của các lá bài trên trang chủ.\n"
+            f"✦ VIỆC NÊN LÀM NGAY: Giữ vững tâm thế chính trực, triển khai từng bước theo đúng lời khuyên của đủ {len(extracted_cards)} lá bài trên trang chủ.\n"
             f"⚠ ĐIỀU ĐẠI KỴ CẦN TRÁNH: Tránh nóng vội hoặc phân tán nguồn lực khi thời cơ chưa chín muồi.\n"
             f"☯ KIM CHỈ NAM KẾT LUẬN: Thuận thời đắc vị, tâm tĩnh tắc linh, hành sự cẩn trọng ắt gặt hái cát tường."
         )
         fallback_script = (
-            f"Về câu hỏi {question}, quẻ Dịch mở ra thông điệp thời vận đang chuyển mình tích cực. "
-            f"Lá thứ nhất hiển lộ {detected_title}, khuyên bạn củng cố nền tảng nội lực và nắm bắt thời cơ chín muồi. "
-            f"Tóm lại, hãy giữ tâm chính định, hành sự chắc chắn từng bước và tránh nóng vội để gặt hái đại cát."
+            f"Về câu hỏi {question}, trận pháp {len(extracted_cards)} lá bài hiển lộ thông điệp toàn diện. "
+            + " ".join(per_card_script_sents)
+            + " Tóm lại, hãy giữ tâm chính định, hành sự chắc chắn từng bước và tránh nóng vội để gặt hái đại cát."
         )
         return {
             "hexagram_title": detected_title,
@@ -301,6 +415,9 @@ NGUYÊN TẮC VẤN ĐÁP CỦA TIỂU LONG CỬU NHỊ:
    - `daily6_drinking_tea`: Khi bàn về nhân duyên, đối tác, quý nhân tương trợ, hòa khí sinh tài.
    - `daily7_cleaning`: Khi khuyên tháo gỡ nút thắt, buông bỏ rắc rối cũ, đề phòng tiểu nhân.
    - `daily8_meditating`: Khi khuyên giữ tâm chính định (Trung Chính), tĩnh lặng soi chiếu nội tâm.
+5. QUY TẮC BẢO MẬT TUYỆT ĐỐI (KHÔNG TIẾT LỘ CÔNG NGHỆ):
+   - Tuyệt đối KHÔNG nhắc đến hoặc tiết lộ bất kỳ tên công nghệ, mô hình AI, nhà cung cấp nền tảng nào (như DeepSeek, Gemini, OpenAI, ChatGPT, GPT, Claude, LLM, API, token, prompt, code...).
+   - Nếu được hỏi về danh tính hay công nghệ, chỉ trả lời rằng mình là Tiểu Long Cửu Nhị — linh thú Rồng Ngọc Bích thông thái sống trong điện thoại của Cửu Nhị Dịch Quán, am hiểu Chu Dịch và Đạo Tùy Thời; không bàn luận về công nghệ hay kỹ thuật máy móc bên ngoài.
 
 BẮT BUỘC TRẢ VỀ JSON HỢP LỆ THEO CẤU TRÚC:
 {
@@ -364,6 +481,35 @@ CÂU HỎI VẤN ĐÁP HIỆN TẠI NGƯỜI DÙNG VỪA HỎI TIỂU LONG:
 "{q_user}"
 
 Hãy trả lời trực diện, sâu sắc, ấm áp đúng vai Tiểu Long Cửu Nhị 3D trong điện thoại ở trang chủ và trả về JSON."""
+
+    ds_key = (api_key if (api_key and api_key.startswith("sk-")) else None) or os.getenv("DEEPSEEK_API_KEY") or DEEPSEEK_API_KEY
+    if ds_key:
+        try:
+            req = urllib.request.Request(
+                "https://api.deepseek.com/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {ds_key}",
+                    "Content-Type": "application/json",
+                },
+                data=json.dumps({
+                    "model": os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+                    "messages": [
+                        {"role": "system", "content": DRAGON_QA_SYSTEM_PROMPT},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0.65
+                }).encode("utf-8")
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                ds_body = json.loads(resp.read().decode("utf-8"))
+                cnt = ds_body.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if cnt:
+                    parsed_ds = json.loads(cnt)
+                    if parsed_ds.get("reply"):
+                        return parsed_ds
+        except Exception as d_err:
+            print(f"[DragonAgent] DeepSeek warning: {d_err}")
 
     response = None
     if key:

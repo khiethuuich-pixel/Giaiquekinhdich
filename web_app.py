@@ -32,7 +32,7 @@ if sys.platform == 'win32':
 from config import (
     BASE_DIR, OUTPUT_DIR, IMAGES_DIR, AUDIO_DIR, VIDEOS_DIR, PODCASTS_DIR,
     GEMINI_API_KEY, save_gemini_api_key, DEFAULT_ASPECT_RATIO, DEFAULT_VOICE,
-    PODCAST_HOST_NAME, PODCAST_MASTER_NAME
+    PODCAST_HOST_NAME, PODCAST_MASTER_NAME, DEEPSEEK_API_KEY
 )
 from pipeline_direct import run_direct_pipeline
 from pipeline_direct_full import run_direct_full_pipeline
@@ -251,6 +251,7 @@ class InkWashInterpretRequest(BaseModel):
     hexagram_text: str = ""
     num_cards: int = 4
     api_key: str = ""
+    skip_summary: bool = False
 
 # ==========================================
 # HTML ROUTING
@@ -303,7 +304,9 @@ async def get_config():
     if GEMINI_API_KEY:
         masked_key = GEMINI_API_KEY[:4] + "..." + GEMINI_API_KEY[-4:] if len(GEMINI_API_KEY) > 8 else "***"
     return {
-        "has_api_key": bool(GEMINI_API_KEY),
+        "has_api_key": bool(GEMINI_API_KEY or DEEPSEEK_API_KEY),
+        "has_gemini_key": bool(GEMINI_API_KEY),
+        "has_deepseek_key": bool(DEEPSEEK_API_KEY),
         "masked_key": masked_key,
         "default_voice": DEFAULT_VOICE,
         "default_aspect_ratio": DEFAULT_ASPECT_RATIO,
@@ -727,11 +730,17 @@ async def api_direct_home_run(req: DirectHomeRequest, background_tasks: Backgrou
 async def api_ink_wash_ai_interpret(req: InkWashInterpretRequest):
     """
     Nhận văn bản 'Chép Toàn Bộ Cho AI' từ trang chủ / Tháp La, đưa vào AI Gemini giải quẻ toàn diện,
-    sau đó tóm tắt giữ trọn ý chính cho từng lá bài (1..N) và kết luận để đưa về đọc đầy đủ trong Xưởng Phim Thủy Mặc.
+    sau đó trả về cả bản tóm tắt giữ trọn ý chính (Bước 1->2->3->4) lẫn bản nguyên văn từng lá bài (Bước 2->4 luôn không qua tóm tắt)
+    để đọc trong Xưởng Phim Thủy Mặc.
     """
     import asyncio
     from gemini_sage import analyze_and_script
-    from voice_engine import condense_analysis_to_concise_script, split_analysis_into_card_sections, sanitize_script_for_tts
+    from voice_engine import (
+        condense_analysis_to_concise_script,
+        split_analysis_into_card_sections,
+        sanitize_script_for_tts,
+        sanitize_full_analysis_for_tts,
+    )
 
     try:
         q = (req.question or "").strip() or "Xin chỉ điểm vận trình và lời khuyên hành động tối ưu?"
@@ -760,8 +769,25 @@ async def api_ink_wash_ai_interpret(req: InkWashInterpretRequest):
             for c_txt in parsed_sections["cards"]:
                 card_summaries.append(sanitize_script_for_tts(c_txt))
 
+        # Bản nguyên văn từng lá bài (phục vụ chế độ Bước 2 -> Bước 4 luôn không qua tóm tắt)
+        full_source = raw_script if (raw_script and len(raw_script.split()) > len(concise_script.split()) + 20) else (full_interp or raw_script)
+        parsed_full = split_analysis_into_card_sections(full_source, n_cards)
+        if not parsed_full.get("matched") and full_interp and full_source != full_interp:
+            parsed_full = split_analysis_into_card_sections(full_interp, n_cards)
+
+        card_full_texts = []
+        if parsed_full.get("matched") and parsed_full.get("cards"):
+            for c_txt in parsed_full["cards"]:
+                card_full_texts.append(sanitize_full_analysis_for_tts(c_txt))
+        else:
+            card_full_texts = list(card_summaries)
+
+        outro_full_raw = parsed_full.get("outro") or summary_advice or parsed_sections.get("outro") or ""
+        outro_full_text = sanitize_full_analysis_for_tts(outro_full_raw)
+
         return {
             "success": True,
+            "skip_summary": bool(req.skip_summary),
             "hexagram_title": hex_title,
             "hook": hook,
             "summary_advice": summary_advice,
@@ -769,6 +795,8 @@ async def api_ink_wash_ai_interpret(req: InkWashInterpretRequest):
             "concise_script": concise_script,
             "card_summaries": card_summaries,
             "outro_summary": sanitize_script_for_tts(parsed_sections.get("outro") or summary_advice),
+            "card_full_texts": card_full_texts,
+            "outro_full_text": outro_full_text,
         }
     except Exception as e:
         return JSONResponse(
